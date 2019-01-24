@@ -27,13 +27,9 @@ def greet_user(bot, update):
                                         resize_keyboard=True)
     update.message.reply_text(text, reply_markup=my_keyboard)
 
-def services(bot, update):
-    my_keyboard = ReplyKeyboardMarkup([['Услуга1', 'Запись'],
-                                       ['Вернуться в главное меню']],
-                                        resize_keyboard=True)
-    update.message.reply_text("Здесь можно будет записаться на услугу", reply_markup=my_keyboard)
+# Функция choose_master для вывода инлайн клавы с мастерами
 
-def show_inline(bot, update):
+def choose_master(bot, update):
     conn = sqlite3.connect('mydatabase.db')
     cursor = conn.cursor()
     sql = "SELECT barber_name FROM barbers"
@@ -42,21 +38,60 @@ def show_inline(bot, update):
     all_masters = []
     for masters in data_base:
         all_masters.append(masters[0])
-    keyboard = [[]]
-    for i in range(len(all_masters)):
-        keyboard.append(InlineKeyboardButton(all_masters[i], callback_data=str(i)))
-
-#    keyboard = [[InlineKeyboardButton(all_masters, callback_data='1'),
-#                 InlineKeyboardButton(all_masters, callback_data='2'),
-#                 InlineKeyboardButton(all_masters, callback_data='3'),
-#                 InlineKeyboardButton(all_masters, callback_data='4')]]
-
+    keyboard = []
+    row = []
+    for z in range(len(all_masters)):
+        pass
+    for i in all_masters:
+        row.append(InlineKeyboardButton(i, callback_data=str(i)))
+    keyboard.append(row)
     reply_markup = InlineKeyboardMarkup(keyboard)
+
 #    bot.send_photo(chat_id=update.message.chat.id,
 #                   photo=open('C:\projects\diplom\photo\Lex.jpg', 'rb'))
-    update.message.reply_text('Все мастера:', reply_markup=reply_markup)
+
+    update.message.reply_text('Выберите мастера:', reply_markup=reply_markup)
+
+#inline_button_pressed - функция для вызова клавиатуры с услугами
 
 def inline_button_pressed(bot, update):
+    conn = sqlite3.connect('mydatabase.db')
+    cursor = conn.cursor()
+
+    sql = "SELECT * FROM barbers"
+    cursor.execute(sql)
+    data_base = cursor.fetchall()
+
+    sql_1 = "SELECT * FROM barbers_to_services"
+    cursor.execute(sql_1)
+    data_base_1 = cursor.fetchall()
+
+    sql_2 = "SELECT * FROM services"
+    cursor.execute(sql_2)
+    data_base_2 = cursor.fetchall()
+
+    counter = []
+    query = update.callback_query
+    name = query.data
+    for masters in data_base:
+        if name in masters:
+            a = masters[0]
+            for master_id in data_base_1:
+                if a in master_id:
+                    b = master_id[2]
+                    for service_id in data_base_2:
+                        if b in service_id:
+                            all_services = []
+                            all_services.append(service_id[2])
+                            counter = counter + all_services
+    my_keyboard = ReplyKeyboardMarkup([counter,
+                                      ["Вернуться в меню"]],
+                                       resize_keyboard=True)
+    bot.send_message(chat_id=update.callback_query.from_user.id,
+                     text="Please select a service: ",
+                     reply_markup=my_keyboard)
+
+'''def date_select(bot, update):
     bot.send_message(chat_id=update.callback_query.from_user.id,
                      text="Please select a date: ",
                      reply_markup=telegramcalendar.create_calendar())
@@ -64,70 +99,23 @@ def inline_button_pressed(bot, update):
     if selected:
         bot.send_message(chat_id=update.callback_query.from_user.id,
                          text="You selected %s" % (date.strftime("%d/%m/%Y")),
-                         reply_markup=ReplyKeyboardRemove())
-#    a = date.strftime("%d/%m/%Y")
-
-#    conn = sqlite3.connect('mydatabase.db')
-#    cursor = conn.cursor()
-#    clients = [(b, a),
-#               (b, a)]
-
-#    cursor.executemany("INSERT INTO calendar_types VALUES (?,?)", clients)
-#    conn.commit()
-
-
-conn = sqlite3.connect('mydatabase.db')
-cursor = conn.cursor()
-sql = "SELECT barber_name FROM barbers"
-cursor.execute(sql)
-data_base = cursor.fetchall()
-all_masters = []
-for masters in data_base:
-    all_masters.append(masters[0])
-keyboard = [[]]
-for i in range(len(all_masters)):
-    for z in range(4):
-        keyboard[z].append(InlineKeyboardButton(all_masters[i], callback_data=str(i)))
-    print(keyboard[i])
-
-'''def choose_time(bot, update):
-    my_keyboard = ReplyKeyboardMarkup([['10:00', '11:00', '12:00'],
-                                       ['13:00', '14:00', '15:00']],
-                                        resize_keyboard=True)
-    update.message.reply_text("Выберите время:", reply_markup=my_keyboard)'''
+                         reply_markup=ReplyKeyboardRemove())'''
 
 def my_entry(bot, update):
-    my_keyboard = ReplyKeyboardMarkup([['Вернуться в главное меню']], resize_keyboard=True)
-    update.message.reply_text("Здесь появятся ваши записи", reply_markup=my_keyboard)
+    my_keyboard = ReplyKeyboardMarkup([['Вернуться в главное меню']],
+                                      resize_keyboard=True)
+    update.message.reply_text("Здесь появятся ваши записи",
+                              reply_markup=my_keyboard)
 def info(bot, update):
-    my_keyboard = ReplyKeyboardMarkup([['Вернуться в главное меню']], resize_keyboard=True)
-    update.message.reply_text("Здесь можно будет узнать информацию о нас", reply_markup=my_keyboard)
-
-#def calendar_handler(bot, update):
-#    update.message.reply_text("Please select a date: ",
-#                        reply_markup=telegramcalendar.create_calendar())
-
-#def date_select(bot, update):
-#    update.message.reply_text("Выберите дату:", reply_markup=telegramcalendar.create_calendar())
-
-'''def inline_handler(bot, update):
-    selected, date = telegramcalendar.process_calendar_selection(bot, update)
-    if selected:
-        bot.send_message(chat_id=update.callback_query.from_user.id,
-                         text="You selected %s" % (date.strftime("%d/%m/%Y")),
-                         reply_markup=ReplyKeyboardRemove())'''
+    my_keyboard = ReplyKeyboardMarkup([['Вернуться в главное меню']],
+                                      resize_keyboard=True)
+    update.message.reply_text("Здесь можно будет узнать информацию о нас",
+                              reply_markup=my_keyboard)
 
 if TOKEN == "728852231:AAEZLnITK0BYNpAfQ4DCIC8CjpyiYLYUpIo":
     print("Please write TOKEN into file")
 else:
     up = Updater("TOKEN")
-
-
-conn = sqlite3.connect('mydatabase.db')
-cursor = conn.cursor()
-sql = "SELECT * FROM clients"
-cursor.execute(sql)
-result = cursor.fetchall()
 
 def main():
     mybot = Updater("728852231:AAEZLnITK0BYNpAfQ4DCIC8CjpyiYLYUpIo", request_kwargs=PROXY)
@@ -135,20 +123,11 @@ def main():
     dp = mybot.dispatcher
     dp.add_handler(CommandHandler("start", greet_user))
 
-    dp.add_handler(CommandHandler("Записаться на услугу", services))
-    dp.add_handler(RegexHandler("Записаться на услугу", services))
+    dp.add_handler(CommandHandler("Записаться на услугу", choose_master))
+    dp.add_handler(RegexHandler("Записаться на услугу", choose_master))
 
-    dp.add_handler(CommandHandler("Запись", show_inline))
-    dp.add_handler(RegexHandler("Запись", show_inline))
+#    dp.add_handler(CallbackQueryHandler(date_select))
     dp.add_handler(CallbackQueryHandler(inline_button_pressed))
-
-#    dp.add_handler(CommandHandler("Услуга1", date_select))
-#    dp.add_handler(RegexHandler("Услуга1", date_select))
-#    dp.add_handler(CommandHandler("Услуга1", choose_time))
-#    dp.add_handler(RegexHandler("Услуга1", choose_time))
-
-#    dp.add_handler(CommandHandler("calendar", calendar_handler))
-#    dp.add_handler(CallbackQueryHandler(inline_handler))
 
     dp.add_handler(CommandHandler("Мои записи", my_entry))
     dp.add_handler(RegexHandler("Мои записи", my_entry))
