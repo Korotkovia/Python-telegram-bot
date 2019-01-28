@@ -1,12 +1,10 @@
-from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, RegexHandler, CallbackQueryHandler, ConversationHandler
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, RegexHandler, CallbackQueryHandler
 
 import logging
 import telegramcalendar
 import sqlite3
-
-#FIRST, SECOND = range(2)
 
 PROXY = {'proxy_url': 'socks5://t1.learn.python.ru:1080',
          'urllib3_proxy_kwargs': {'username': 'learn', 'password': 'python'}}
@@ -19,17 +17,20 @@ logging.basicConfig(format='%(name)s - %(levelname)s - %(message)s',
 
 logger = logging.getLogger(__name__)
 
+
 def talk_to_me(bot, update):
     update.message.reply_text('Приносим свои извинения! Бот находится в стадии разработки!')
+
 
 def greet_user(bot, update):
     text = 'Вас приветствует salon_bot!'
     my_keyboard = ReplyKeyboardMarkup([['Записаться на услугу'],
                                        ['Мои записи', 'О нас']],
-                                        resize_keyboard=True)
-    update.message.reply_text(text, reply_markup=my_keyboard)
+                                      resize_keyboard=True,
+                                      one_time_keyboard=True)
+    update.message.reply_text(text,
+                              reply_markup=my_keyboard)
 
-# Функция choose_master для вывода инлайн клавы с мастерами
 
 def choose_master(bot, update):
     conn = sqlite3.connect('mydatabase.db')
@@ -50,10 +51,9 @@ def choose_master(bot, update):
 #    bot.send_photo(chat_id=update.message.chat.id,
 #                   photo=open('C:\projects\diplom\photo\Lex.jpg', 'rb'))
 
-    update.message.reply_text(text='Выберите мастера:', reply_markup=reply_markup)
+    update.message.reply_text(text='Выберите мастера:',
+                              reply_markup=reply_markup)
 
-
-#inline_button_pressed - функция для вызова клавиатуры с услугами
 
 def inline_button_pressed(bot, update):
     conn = sqlite3.connect('mydatabase.db')
@@ -88,7 +88,8 @@ def inline_button_pressed(bot, update):
 
     my_keyboard_1 = ReplyKeyboardMarkup([counter,
                                         ["Вернуться в меню"]],
-                                        resize_keyboard=True)
+                                        resize_keyboard=True,
+                                        one_time_keyboard=True)
     bot.send_message(chat_id=update.callback_query.from_user.id,
                      text="Please select a service: ",
                      reply_markup=my_keyboard_1)
@@ -96,29 +97,37 @@ def inline_button_pressed(bot, update):
     if selected:
         bot.send_message(chat_id=update.callback_query.from_user.id,
                          text="You selected %s" % (date.strftime("%d/%m/%Y")),
-                         reply_markup=ReplyKeyboardMarkup([['10:00', '11:00'],
-                                                           ['12:00', '13:00']],
-                                                          resize_keyboard=True))
+                         reply_markup=ReplyKeyboardMarkup([['10:00', '11:00', '12:00', '13:00'],
+                                                           ['14:00', '15:00', '16:00', '17:00'],
+                                                           ['18:00', '19:00', '20:00', '21:00']],
+                                                          resize_keyboard=True,
+                                                          one_time_keyboard=True))
+
 
 def date_select(bot, update):
     update.message.reply_text(text="Please select a date: ",
                               reply_markup=telegramcalendar.create_calendar())
+
 
 def my_entry(bot, update):
     my_keyboard = ReplyKeyboardMarkup([['Вернуться в главное меню']],
                                       resize_keyboard=True)
     update.message.reply_text("Здесь появятся ваши записи",
                               reply_markup=my_keyboard)
+
+
 def info(bot, update):
     my_keyboard = ReplyKeyboardMarkup([['Вернуться в главное меню']],
                                       resize_keyboard=True)
     update.message.reply_text("Здесь можно будет узнать информацию о нас",
                               reply_markup=my_keyboard)
 
+
 if TOKEN == "728852231:AAEZLnITK0BYNpAfQ4DCIC8CjpyiYLYUpIo":
     print("Please write TOKEN into file")
 else:
     up = Updater("TOKEN")
+
 
 def main():
     mybot = Updater("728852231:AAEZLnITK0BYNpAfQ4DCIC8CjpyiYLYUpIo", request_kwargs=PROXY)
@@ -129,22 +138,14 @@ def main():
     dp.add_handler(CommandHandler("Записаться на услугу", choose_master))
     dp.add_handler(RegexHandler("Записаться на услугу", choose_master))
 
-    dp.add_handler(CommandHandler("Стрижка машинкой", date_select))
-    dp.add_handler(RegexHandler("Стрижка машинкой", date_select))
-    dp.add_handler(CommandHandler("Стрижка модельная", date_select))
-    dp.add_handler(RegexHandler("Стрижка модельная", date_select))
-    dp.add_handler(CommandHandler("Стрижка бороды", date_select))
-    dp.add_handler(RegexHandler("Стрижка бороды", date_select))
-    dp.add_handler(CommandHandler("Опасное бритье", date_select))
-    dp.add_handler(RegexHandler("Опасное бритье", date_select))
-    dp.add_handler(CommandHandler("Стрижка усов", date_select))
-    dp.add_handler(RegexHandler("Стрижка усов", date_select))
-    dp.add_handler(CommandHandler("Моделирование бороды и усов", date_select))
-    dp.add_handler(RegexHandler("Моделирование бороды и усов", date_select))
+    dp.add_handler(CommandHandler("Стрижка мужская", date_select))
+    dp.add_handler(RegexHandler("Стрижка мужская", date_select))
+    dp.add_handler(CommandHandler("Стрижка женская", date_select))
+    dp.add_handler(RegexHandler("Стрижка женская", date_select))
     dp.add_handler(CommandHandler("Укладка", date_select))
     dp.add_handler(RegexHandler("Укладка", date_select))
-    dp.add_handler(CommandHandler("Маска для лица", date_select))
-    dp.add_handler(RegexHandler("Маска для лица", date_select))
+    dp.add_handler(CommandHandler("Бритье", date_select))
+    dp.add_handler(RegexHandler("Бритье", date_select))
 
     dp.add_handler(CallbackQueryHandler(inline_button_pressed))
 
@@ -156,18 +157,10 @@ def main():
     dp.add_handler(CommandHandler("Вернуться в главное меню", greet_user))
     dp.add_handler(RegexHandler("Вернуться в главное меню", greet_user))
 
-#    dp.add_handler(ConversationHandler(
-#            entry_points=[CommandHandler('start', greet_user)],
-#            states={
-#                FIRST: [CallbackQueryHandler(choose_master)],
-#                SECOND: [CallbackQueryHandler(date_select)]
-#            },
-#            fallbacks=[CommandHandler('start', greet_user)]
-#        ))
-
     dp.add_handler(MessageHandler(Filters.text, talk_to_me))
 
     mybot.start_polling()
     mybot.idle()
+
 
 main()
