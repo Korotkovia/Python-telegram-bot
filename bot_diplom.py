@@ -74,33 +74,37 @@ def inline_button_pressed(bot, update, user_data):
     query = update.callback_query
     name = query.data
 
-    for masters in data_base:
-        if name in masters:
-            global c
-            c = query.data
-            print(c)
-            a = masters[0]
-            for master_id in data_base_1:
-                if a in master_id:
-                    b = master_id[2]
-                    for service_id in data_base_2:
-                        if b in service_id:
-                            all_services = []
-                            all_services.append(service_id[2])
-                            keyboard = []
-                            row = []
-                            for i in all_services:
-                                row.append(InlineKeyboardButton(i, callback_data=str(i)))
-                            keyboard.append(row)
-                            reply_markup = InlineKeyboardMarkup(keyboard)
+    counter = []
+    if name == query.data:
+        global c
+        c = query.data
+        for masters in data_base:
+            if name in masters:
+                a = masters[0]
+                for master_id in data_base_1:
+                    if a in master_id:
+                        b = master_id[2]
+                        for service_id in data_base_2:
+                            if b in service_id:
+                                all_services = []
+                                all_services.append(service_id[2])
+                                keyboard = []
+                                row = []
+                                for i in all_services:
+                                    row.append(InlineKeyboardButton(i, callback_data=str(i)))
+                                counter = row + counter
+                                list_1 = []
+                                list_1.append(counter)
+                                reply_markup = InlineKeyboardMarkup(list_1)
+
                             # bot.send_message(chat_id=update.callback_query.from_user.id,
                             #                  text="Выберите услугу:",
                             #                  reply_markup=reply_markup)
 
-                            bot.edit_message_text(text='Выберите услугу:',
-                                                  chat_id=update.callback_query.from_user.id,
-                                                  message_id=query.message.message_id,
-                                                  reply_markup=reply_markup)
+                                bot.edit_message_text(text='Выберите услугу:',
+                                                      chat_id=update.callback_query.from_user.id,
+                                                      message_id=query.message.message_id,
+                                                      reply_markup=reply_markup)
 
     sql_3 = "SELECT service_name FROM services"
     cursor.execute(sql_3)
@@ -117,9 +121,15 @@ def inline_button_pressed(bot, update, user_data):
 
     selected, date = telegramcalendar.process_calendar_selection(bot, update)
     if selected:
-        bot.send_message(chat_id=update.callback_query.from_user.id,
-                         text="Вы выбрали дату: %s" % (date.strftime("%d/%m/%Y")),)
-                         # reply_markup=reply_markup)
+        bot.edit_message_text(text="Вы выбрали дату: %s" % (date.strftime("%d/%m/%Y")),
+                              chat_id=query.message.chat_id,
+                              message_id=query.message.message_id,)
+                              # reply_markup=telegramcalendar.create_calendar())
+
+
+        # bot.send_message(chat_id=update.callback_query.from_user.id,
+        #                  text="Вы выбрали дату: %s" % (date.strftime("%d/%m/%Y")),)
+        #                  # reply_markup=reply_markup)
         global f
         f = query.data
         print(f)
@@ -132,9 +142,13 @@ def inline_button_pressed(bot, update, user_data):
                            [InlineKeyboardButton('14:00', callback_data='14:00'),
                             InlineKeyboardButton('15:00', callback_data='15:00')]]
         reply_markup = InlineKeyboardMarkup(inline_keyboard)
-        bot.send_message(chat_id=update.callback_query.from_user.id,
-                         text="Выберите время:",
-                         reply_markup=reply_markup)
+        # bot.send_message(chat_id=update.callback_query.from_user.id,
+        #                  text="Выберите время:",
+        #                  reply_markup=reply_markup)
+        bot.edit_message_text(text='Выберите время:',
+                              chat_id=query.message.chat_id,
+                              message_id=query.message.message_id,
+                              reply_markup=reply_markup)
 
     print(c, e, f)
 
