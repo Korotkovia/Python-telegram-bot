@@ -1,6 +1,6 @@
-from telegram import ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton
-
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, RegexHandler, CallbackQueryHandler
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler, Filters,\
+    RegexHandler
 
 import logging
 import telegramcalendar
@@ -11,16 +11,14 @@ PROXY = {'proxy_url': 'socks5://t1.learn.python.ru:1080',
 
 TOKEN = "728852231:AAEZLnITK0BYNpAfQ4DCIC8CjpyiYLYUpIo"
 
+
+FIRST, SECOND, THIRD, FOUR = range(4)
+
 logging.basicConfig(format='%(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO,
                     filename='bot.log')
 
 logger = logging.getLogger(__name__)
-
-
-def talk_to_me(bot, update):
-    # функция - ответ на текст введенный пользователем
-    update.message.reply_text('Нажмите /start для запуска бота')
 
 
 def greet_user(bot, update):
@@ -33,7 +31,7 @@ def greet_user(bot, update):
     update.message.reply_text(text, reply_markup=my_keyboard)
 
 
-def choose_master(bot, update, user_data):
+def choose_master(bot, update):
     # функция вызова инлайн клавиатуры с мастерами
     conn = sqlite3.connect('mydatabase.db')
     cursor = conn.cursor()
@@ -49,19 +47,14 @@ def choose_master(bot, update, user_data):
         row.append(InlineKeyboardButton(i, callback_data=str(i)))
     keyboard.append(row)
     reply_markup = InlineKeyboardMarkup(keyboard)
-    bot.send_photo(chat_id=update.message.chat.id,
-                   photo=open('C:\projects\diplom\photo\BRB 666.jpg', 'rb'))
-    update.message.reply_text('Выберите мастера', reply_markup=reply_markup)
+    # bot.send_photo(chat_id=update.message.chat.id,
+    #                photo=open('C:\projects\diplom\photo\BRB 666.jpg', 'rb'))
+    update.message.reply_text('Выберите мастера:', reply_markup=reply_markup)
+    return FIRST
 
 
-def get_contact(bot, update):
-    # функция обработчик контактов
-    print(update.message.contact)
-    update.message.reply_text('Спасибо!')
-
-
-def inline_button_pressed(bot, update, user_data):
-    # функция вызова инлайн клавиатур
+def choose_service(bot, update):
+    # функция вызова инлайн клавиатуры с услугами
     conn = sqlite3.connect('mydatabase.db')
     cursor = conn.cursor()
 
@@ -79,32 +72,7 @@ def inline_button_pressed(bot, update, user_data):
 
     query = update.callback_query
     name = query.data
-
-    # запрос контактов
-    if len(query.data) == 5:
-        contact_button = KeyboardButton('Контактные данные', request_contact=True)
-        my_keyboard = ReplyKeyboardMarkup([[contact_button]],
-                                          resize_keyboard=True,
-                                          one_time_keyboard=True)
-        bot.send_message(chat_id=update.callback_query.from_user.id,
-                         text="Отправьте Ваши контактные данные для уточнения заказа:",
-                         reply_markup=my_keyboard)
-        bot.delete_message(chat_id=update.callback_query.from_user.id,
-                           message_id=query.message.message_id)
-
-        global p
-        p = query.data
-        user_data['time'] = p
-        cort_1 = (user_data.get('name'),)
-        cort_2 = cort_1 + (user_data.get('service'),)
-        cort_3 = cort_2 + (user_data.get('date'),)
-        cort_4 = cort_3 + (user_data.get('time'),)
-        print(cort_4)
-        data = []
-        data.append(cort_4)
-        cursor.executemany("INSERT INTO record_info VALUES (?,?,?,?)", data)
-        conn.commit()
-
+    # Клавиатура с услугами
     counter = []
     for masters in data_base:
         if name in masters:
@@ -118,7 +86,6 @@ def inline_button_pressed(bot, update, user_data):
                         if b in service_id:
                             all_services = []
                             all_services.append(service_id[2])
-                            keyboard = []
                             row = []
                             for i in all_services:
                                 row.append(InlineKeyboardButton(i, callback_data=str(i)))
@@ -131,32 +98,24 @@ def inline_button_pressed(bot, update, user_data):
                           chat_id=update.callback_query.from_user.id,
                           message_id=query.message.message_id,
                           reply_markup=reply_markup)
-    global d
-    d = query.data
+    return SECOND
 
-    sql_3 = "SELECT service_name FROM services"
-    cursor.execute(sql_3)
-    data_base_3 = cursor.fetchall()
-    for z in data_base_3:
-        if query.data == z[0]:
-            bot.edit_message_text(text='Выберите дату:',
-                                  chat_id=query.message.chat_id,
-                                  message_id=query.message.message_id,
-                                  reply_markup=telegramcalendar.create_calendar())
-            global e
-            e = query.data
 
+def calendar(bot, update):
+    # функция вызова календаря
+    query = update.callback_query
+    bot.edit_message_text(text='Выберите дату:',
+                          chat_id=query.message.chat_id,
+                          message_id=query.message.message_id,
+                          reply_markup=telegramcalendar.create_calendar())
+    return THIRD
+
+
+def time(bot, update):
+    # функция вызова инлайн клавиатуры с временем
+    query = update.callback_query
     selected, date = telegramcalendar.process_calendar_selection(bot, update)
     if selected:
-        bot.edit_message_text(text="Вы выбрали дату: %s" % (date.strftime("%d/%m/%Y")),
-                              chat_id=query.message.chat_id,
-                              message_id=query.message.message_id,)
-                              # reply_markup=telegramcalendar.create_calendar())
-
-        global f
-        f = query.data
-
-    if len(query.data) == 13:
         inline_keyboard = [[InlineKeyboardButton('10:00', callback_data='10:00'),
                             InlineKeyboardButton('11:00', callback_data='11:00')],
                            [InlineKeyboardButton('12:00', callback_data='12:00'),
@@ -164,35 +123,46 @@ def inline_button_pressed(bot, update, user_data):
                            [InlineKeyboardButton('14:00', callback_data='14:00'),
                             InlineKeyboardButton('15:00', callback_data='15:00')]]
         reply_markup = InlineKeyboardMarkup(inline_keyboard)
-
         bot.edit_message_text(text='Выберите время:',
                               chat_id=query.message.chat_id,
                               message_id=query.message.message_id,
                               reply_markup=reply_markup)
-        global g
-        g = query.data
-
-    # Запись данных в user_data
-    user_data['name'] = c
-    user_data['date'] = date.strftime("%d/%m/%Y")
-    user_data['service'] = e
+    return FOUR
 
 
-def my_entry(bot, update, user_data):
-    # функция вывод информации о записях
-    my_keyboard_2 = ReplyKeyboardMarkup([["Вернуться в меню"]],
-                                        resize_keyboard=True)
-    update.message.reply_text("Имя мастера: " + user_data.get('name') + "\n"
-                              "Услуга: " + user_data.get('service') + "\n"
-                              "Дата: " + user_data.get('date') + "\n"
-                              "Время: " + user_data.get('time'))
+def contact(bot, update):
+    # функция вызова запроса контактов
+    query = update.callback_query
+    print(query.data)
+    contact_button = KeyboardButton('Контактные данные', request_contact=True)
+    my_keyboard = ReplyKeyboardMarkup([[contact_button]],
+                                      resize_keyboard=True,
+                                      one_time_keyboard=True)
+    bot.send_message(chat_id=update.callback_query.from_user.id,
+                     text="Отправьте Ваши контактные данные для уточнения заказа:",
+                     reply_markup=my_keyboard)
+    bot.delete_message(chat_id=update.callback_query.from_user.id,
+                       message_id=query.message.message_id)
+
+
+def get_contact(bot, update, user_data):
+    # функция обработчик контактов
+    a = str(update.message.contact)
+    phone = a[18:30]
+    user_data['phone'] = phone
+    my_keyboard = ReplyKeyboardMarkup([['Вернуться в главное меню']],
+                                      resize_keyboard=True)
+    update.message.reply_text("Спасибо! \n "
+                              "Вы можете посмотреть информацию о своих записях в \n"
+                              " главном меню",
+                              reply_markup=my_keyboard)
 
 
 def info(bot, update, user_data):
     my_keyboard = ReplyKeyboardMarkup([['Вернуться в главное меню']],
                                       resize_keyboard=True)
-    bot.send_photo(chat_id=update.message.chat.id,
-                   photo=open('C:\projects\diplom\photo\mapbrb.jpg', 'rb'))
+    # bot.send_photo(chat_id=update.message.chat.id,
+    #                photo=open('C:\projects\diplom\photo\mapbrb.jpg', 'rb'))
     update.message.reply_text("Наши контакты: \n "
                               "Адрес: г.Москва, ул.Большая Ордынка 17 стр.1 \n "
                               "Телефон: +74951234567 \n "
@@ -201,24 +171,10 @@ def info(bot, update, user_data):
                               "Выходные: c 12:00 до 22:00",
                               reply_markup=my_keyboard)
 
-# if TOKEN == "728852231:AAEZLnITK0BYNpAfQ4DCIC8CjpyiYLYUpIo":
-#     print("Please write TOKEN into file")
-# else:
-#     up = Updater("TOKEN")
-
 
 def main():
     mybot = Updater("728852231:AAEZLnITK0BYNpAfQ4DCIC8CjpyiYLYUpIo", request_kwargs=PROXY)
-
     dp = mybot.dispatcher
-    dp.add_handler(CommandHandler("start", greet_user))
-
-    dp.add_handler(CommandHandler("Запись", choose_master, pass_user_data=True))
-    dp.add_handler(RegexHandler("Запись", choose_master, pass_user_data=True))
-    dp.add_handler(CallbackQueryHandler(inline_button_pressed, pass_user_data=True))
-
-    dp.add_handler(CommandHandler("Мои записи", my_entry, pass_user_data=True))
-    dp.add_handler(RegexHandler("Мои записи", my_entry, pass_user_data=True))
 
     dp.add_handler(CommandHandler("О нас", info, pass_user_data=True))
     dp.add_handler(RegexHandler("О нас", info, pass_user_data=True))
@@ -226,11 +182,25 @@ def main():
     dp.add_handler(CommandHandler("Вернуться в главное меню", greet_user))
     dp.add_handler(RegexHandler("Вернуться в главное меню", greet_user))
 
-    dp.add_handler(MessageHandler(Filters.contact, get_contact))
-    dp.add_handler(MessageHandler(Filters.text, talk_to_me))
+    dp.add_handler(CommandHandler("Вернуться в главное меню", get_contact))
+    dp.add_handler(RegexHandler("Вернуться в главное меню", get_contact))
+
+    dp.add_handler(CommandHandler("start", greet_user))
+    conv_handler = ConversationHandler(
+        entry_points=[RegexHandler('Запись', choose_master)],
+        states={
+            FIRST: [CallbackQueryHandler(choose_service)],
+            SECOND: [CallbackQueryHandler(calendar)],
+            THIRD: [CallbackQueryHandler(time)],
+            FOUR: [CallbackQueryHandler(contact)]
+        },
+        fallbacks=[MessageHandler(Filters.contact, get_contact, pass_user_data=True)]
+    )
+    dp.add_handler(conv_handler)
 
     mybot.start_polling()
     mybot.idle()
 
 
-main()
+if __name__ == '__main__':
+    main()
