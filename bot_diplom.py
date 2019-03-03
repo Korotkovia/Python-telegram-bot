@@ -4,7 +4,11 @@ from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, Conversa
 
 import logging
 import telegramcalendar
-import sqlite3
+import psycopg2
+
+conn = psycopg2.connect(dbname='mydatabase', user='postgres',
+                        password='qwerty', host='192.168.0.100')
+cursor = conn.cursor()
 
 PROXY = {'proxy_url': 'socks5://t1.learn.python.ru:1080',
          'urllib3_proxy_kwargs': {'username': 'learn', 'password': 'python'}}
@@ -33,8 +37,6 @@ def greet_user(bot, update):
 
 def choose_master(bot, update):
     # функция вызова инлайн клавиатуры с мастерами
-    conn = sqlite3.connect('mydatabase.db')
-    cursor = conn.cursor()
     sql = "SELECT barber_name FROM barbers"
     cursor.execute(sql)
     data_base = cursor.fetchall()
@@ -53,10 +55,8 @@ def choose_master(bot, update):
     return FIRST
 
 
-def choose_service(bot, update):
+def choose_service(bot, update, user_data):
     # функция вызова инлайн клавиатуры с услугами
-    conn = sqlite3.connect('mydatabase.db')
-    cursor = conn.cursor()
 
     sql = "SELECT * FROM barbers"
     cursor.execute(sql)
@@ -98,20 +98,23 @@ def choose_service(bot, update):
                           chat_id=update.callback_query.from_user.id,
                           message_id=query.message.message_id,
                           reply_markup=reply_markup)
+    # Запись данных в user_data
+    user_data['name'] = query.data
     return SECOND
 
 
-def calendar(bot, update):
+def calendar(bot, update, user_data):
     # функция вызова календаря
     query = update.callback_query
     bot.edit_message_text(text='Выберите дату:',
                           chat_id=query.message.chat_id,
                           message_id=query.message.message_id,
                           reply_markup=telegramcalendar.create_calendar())
+    user_data['service'] = query.data
     return THIRD
 
 
-def time(bot, update):
+def time(bot, update, user_data):
     # функция вызова инлайн клавиатуры с временем
     query = update.callback_query
     selected, date = telegramcalendar.process_calendar_selection(bot, update)
@@ -127,13 +130,13 @@ def time(bot, update):
                               chat_id=query.message.chat_id,
                               message_id=query.message.message_id,
                               reply_markup=reply_markup)
+    user_data['date'] = date.strftime("%d/%m/%Y")
     return FOUR
 
 
-def contact(bot, update):
+def contact(bot, update, user_data):
     # функция вызова запроса контактов
     query = update.callback_query
-    print(query.data)
     contact_button = KeyboardButton('Контактные данные', request_contact=True)
     my_keyboard = ReplyKeyboardMarkup([[contact_button]],
                                       resize_keyboard=True,
@@ -143,6 +146,7 @@ def contact(bot, update):
                      reply_markup=my_keyboard)
     bot.delete_message(chat_id=update.callback_query.from_user.id,
                        message_id=query.message.message_id)
+    user_data['time'] = query.data
 
 
 def get_contact(bot, update, user_data):
@@ -156,9 +160,21 @@ def get_contact(bot, update, user_data):
                               "Вы можете посмотреть информацию о своих записях в \n"
                               " главном меню",
                               reply_markup=my_keyboard)
+    # Запись всех данных в БД
+    cort_1 = (user_data.get('name'),)
+    cort_2 = cort_1 + (user_data.get('service'),)
+    cort_3 = cort_2 + (user_data.get('date'),)
+    cort_4 = cort_3 + (user_data.get('time'),)
+    cort_5 = cort_4 + (user_data.get('phone'),)
+    print(cort_5)
+    data = []
+    data.append(cort_5)
+    lolka = "INSERT INTO info (name, service, date, time, number) VALUES (%s,%s,%s,%s,%s);"
+    cursor.execute(lolka, cort_5)
+    conn.commit()
 
 
-def info(bot, update, user_data):
+def info(bot, update):
     my_keyboard = ReplyKeyboardMarkup([['Вернуться в главное меню']],
                                       resize_keyboard=True)
     # bot.send_photo(chat_id=update.message.chat.id,
@@ -172,12 +188,26 @@ def info(bot, update, user_data):
                               reply_markup=my_keyboard)
 
 
+def my_entry(bot, update, user_data):
+    # функция вывод информации о записях
+    my_keyboard = ReplyKeyboardMarkup([["Вернуться в главное меню"]],
+                                      resize_keyboard=True)
+    update.message.reply_text("Имя мастера: " + user_data.get('name') + "\n"
+                              "Услуга: " + user_data.get('service') + "\n"
+                              "Дата: " + user_data.get('date') + "\n"
+                              "Время: " + user_data.get('time'),
+                              reply_markup=my_keyboard)
+
+
 def main():
     mybot = Updater("728852231:AAEZLnITK0BYNpAfQ4DCIC8CjpyiYLYUpIo", request_kwargs=PROXY)
     dp = mybot.dispatcher
 
-    dp.add_handler(CommandHandler("О нас", info, pass_user_data=True))
-    dp.add_handler(RegexHandler("О нас", info, pass_user_data=True))
+    dp.add_handler(CommandHandler("О нас", info))
+    dp.add_handler(RegexHandler("О нас", info))
+
+    dp.add_handler(CommandHandler("Мои записи", my_entry, pass_user_data=True))
+    dp.add_handler(RegexHandler("Мои записи", my_entry, pass_user_data=True))
 
     dp.add_handler(CommandHandler("Вернуться в главное меню", greet_user))
     dp.add_handler(RegexHandler("Вернуться в главное меню", greet_user))
@@ -189,10 +219,10 @@ def main():
     conv_handler = ConversationHandler(
         entry_points=[RegexHandler('Запись', choose_master)],
         states={
-            FIRST: [CallbackQueryHandler(choose_service)],
-            SECOND: [CallbackQueryHandler(calendar)],
-            THIRD: [CallbackQueryHandler(time)],
-            FOUR: [CallbackQueryHandler(contact)]
+            FIRST: [CallbackQueryHandler(choose_service, pass_user_data=True)],
+            SECOND: [CallbackQueryHandler(calendar, pass_user_data=True)],
+            THIRD: [CallbackQueryHandler(time, pass_user_data=True)],
+            FOUR: [CallbackQueryHandler(contact, pass_user_data=True)]
         },
         fallbacks=[MessageHandler(Filters.contact, get_contact, pass_user_data=True)]
     )
