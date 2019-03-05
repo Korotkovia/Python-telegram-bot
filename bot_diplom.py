@@ -6,8 +6,10 @@ import logging
 import telegramcalendar
 import psycopg2
 
-conn = psycopg2.connect(dbname='mydatabase', user='postgres',
-                        password='qwerty', host='192.168.0.100')
+conn = psycopg2.connect(dbname='mydatabase',
+                        user='postgres',
+                        password='qwerty',
+                        host='192.168.0.100')
 cursor = conn.cursor()
 
 PROXY = {'proxy_url': 'socks5://t1.learn.python.ru:1080',
