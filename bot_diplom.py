@@ -117,6 +117,7 @@ def choose_service(bot, update, user_data):
     # bot.send_photo(chat_id=update.message.chat.id,
     #                photo=open('C:\projects\diplom\photo\BRB 666.jpg', 'rb'))
     update.message.reply_text('Выберите услугу: {}'.format(smile_7), reply_markup=reply_markup)
+
     return FIRST
 
 
@@ -160,19 +161,49 @@ def choose_master(bot, update, user_data):
                           chat_id=update.callback_query.from_user.id,
                           message_id=query.message.message_id,
                           reply_markup=reply_markup)
+
     # Запись данных в user_data
     user_data['service'] = query.data
+
     return SECOND
 
 
 def calendar(bot, update, user_data):
     # функция вызова календаря
     query = update.callback_query
-    bot.edit_message_text(text='Выберите дату: {}'.format(smile_5),
-                          chat_id=query.message.chat_id,
-                          message_id=query.message.message_id,
-                          reply_markup=telegramcalendar.create_calendar())
+
+    name = query.data
+    if name == 'Вова':
+        bot.edit_message_text(text='Выберите дату: {}'.format(smile_5),
+                              chat_id=query.message.chat_id,
+                              message_id=query.message.message_id,
+                              reply_markup=telegramcalendar.create_calendar_vova())
+    # if name == 'Дима':
+    #     bot.edit_message_text(text='Выберите дату: {}'.format(smile_5),
+    #                           chat_id=query.message.chat_id,
+    #                           message_id=query.message.message_id,
+    #                           reply_markup=telegramcalendar.create_calendar_dima())
+    # if name == 'Сергей':
+    #     bot.edit_message_text(text='Выберите дату: {}'.format(smile_5),
+    #                           chat_id=query.message.chat_id,
+    #                           message_id=query.message.message_id,
+    #                           reply_markup=telegramcalendar.create_calendar_sergey())
+    # if name == 'Кирилл':
+    #     bot.edit_message_text(text='Выберите дату: {}'.format(smile_5),
+    #                           chat_id=query.message.chat_id,
+    #                           message_id=query.message.message_id,
+    #                           reply_markup=telegramcalendar.create_calendar_kirill())
+    else:
+        bot.edit_message_text(text='Выберите дату: {}'.format(smile_5),
+                              chat_id=query.message.chat_id,
+                              message_id=query.message.message_id,
+                              reply_markup=telegramcalendar.create_calendar())
+
     user_data['name'] = query.data
+
+    # global mylist
+    # mylist = []
+
     return THIRD
 
 
@@ -297,70 +328,71 @@ def my_entry(bot, update, user_data):
 
         if len(x) == 2:
             row.append(words[0] + x[0] + ',' + x[1])
-        if len(x) == 4:
+        elif len(x) == 4:
             row.append(words[0] + x[0] + ',' + x[1])
             row_1.append(words[1] + x[2] + ',' + x[3])
-        else:
+        elif len(x) > 4:
             row.append(words[0] + x[0] + ',' + x[1])
             row_1.append(words[1] + x[2] + ',' + x[3])
             row_2.append(words[2] + x[4] + ',' + x[5])
+        else:
+            update.message.reply_text('У вас нет записей {}'.format(smile_10),
+                                      reply_markup=start_keyboard)
 
-        lol_keyboard.extend((row, row_1, row_2))
+        lol_keyboard.extend((row, row_1, row_2, ['Вернуться в главное меню']))
 
         reply_markup = ReplyKeyboardMarkup(lol_keyboard, resize_keyboard=True)
 
-        update.message.reply_text('lol', reply_markup=reply_markup)
+        # update.message.reply_text('Список ваших записей:', reply_markup=reply_markup)
 
-    # update.message.reply_text("Услуга: " + user_data.get('service') + "\n"
-    #                           "Имя мастера: " + user_data.get('name') + "\n"
-    #                           "Дата: " + user_data.get('date') + "\n"
-    #                           "Время: " + user_data.get('time') + "\n"
-    #                           "Клиент: " + user_data.get('first_name') + ' ' + user_data.get('last_name'),
-    #                           reply_markup=my_keyboard_2)
-
-    # row.append(word + z[0] + " " + z[3])
-
-    # for phones in x:
-    #     if user_data.get('number') in x:
-    #         print(phones)
-
-            # if user_data.get('number') in x:
-            #     print(user_data.get('number'))
-        # print(y)
-
-    # for phone_list in data_base:
-    #     if user_data.get('number') in phone_list[4]:
-    #         a.append(word + phone_list[0] + " " + phone_list[3])
-    # if len(a) == 1:
-    #     b.append(a[0])
-    #     row.append(b)
-    # elif len(a) == 2:
-    #     b.append(a[0])
-    #     c.append(a[1])
-    #     row.extend((b, c))
-    # elif len(a) == 3:
-    #     b.append(a[0])
-    #     c.append(a[1])
-    #     d.append(a[2])
-    #     row.extend((b, c, d))
-    # #
-    # # b.append(a[0])
-    # # c.append(a[1])
-    # # d.append(a[2])
-    # # row.extend((b, c, d))
-    #
-    # my_keyboard_2 = ReplyKeyboardMarkup(row, resize_keyboard=True)
-    #
-    # update.message.reply_text("Услуга: " + user_data.get('service') + "\n"
-    #                           "Имя мастера: " + user_data.get('name') + "\n"
-    #                           "Дата: " + user_data.get('date') + "\n"
-    #                           "Время: " + user_data.get('time') + "\n"
-    #                           "Клиент: " + user_data.get('first_name') + ' ' + user_data.get('last_name'),
-    #                           reply_markup=my_keyboard_2)
+        update.message.reply_text("Услуга: " + x[0] + "\n"
+                                  "Имя мастера: " + user_data.get('name') + "\n"
+                                  "Дата: " + user_data.get('date') + "\n"
+                                  "Время: " + user_data.get('time') + "\n"
+                                  "Клиент: " + user_data.get('first_name') + ' ' + user_data.get('last_name'),
+                                  reply_markup=reply_markup)
 
 
-def my_entry1(bot, update, user_data):
-    print('lol)')
+def cancel_entry_1(bot, update, user_data):
+    sql = "SELECT * FROM record_info"
+    cursor.execute(sql)
+    data_base = cursor.fetchall()
+    info_list = []
+    for data_list in data_base:
+        if user_data.get('number') in data_list[4]:
+            info_list.append(data_list[0])
+    a = (info_list[0], user_data.get('number'))
+    cursor.execute("DELETE FROM record_info WHERE service = %s and number = %s", a)
+    conn.commit()
+    update.message.reply_text('Запись отменена!', reply_markup=my_entry(bot, update, user_data))
+
+
+def cancel_entry_2(bot, update, user_data):
+    sql = "SELECT * FROM record_info"
+    cursor.execute(sql)
+    data_base = cursor.fetchall()
+    info_list = []
+    for data_list in data_base:
+        if user_data.get('number') in data_list[4]:
+            info_list.append(data_list[0])
+    a = (info_list[1], user_data.get('number'))
+    cursor.execute("DELETE FROM record_info WHERE service = %s and number = %s", a)
+    conn.commit()
+    update.message.reply_text('Запись отменена!', reply_markup=my_entry(bot, update, user_data))
+
+
+def cancel_entry_3(bot, update, user_data):
+    sql = "SELECT * FROM record_info"
+    cursor.execute(sql)
+    data_base = cursor.fetchall()
+    info_list = []
+    for data_list in data_base:
+        if user_data.get('number') in data_list[4]:
+            info_list.append(data_list[0])
+    a = (info_list[2], user_data.get('number'))
+    cursor.execute("DELETE FROM record_info WHERE service = %s and number = %s", a)
+    conn.commit()
+    update.message.reply_text('Запись отменена!', reply_markup=my_entry(bot, update, user_data))
 
 
 def info(bot, update):
@@ -401,17 +433,20 @@ def main():
     dp.add_handler(CommandHandler("Отменить все записи", cancel_record, pass_user_data=True))
     dp.add_handler(RegexHandler("Отменить все записи", cancel_record, pass_user_data=True))
 
-    dp.add_handler(CommandHandler("№ 1: ", my_entry1, pass_user_data=True))
-    dp.add_handler(RegexHandler("№ 1: ", my_entry1, pass_user_data=True))
+    dp.add_handler(CommandHandler("№ 1: ", cancel_entry_1, pass_user_data=True))
+    dp.add_handler(RegexHandler("№ 1: ", cancel_entry_1, pass_user_data=True))
+
+    dp.add_handler(CommandHandler("№ 2: ", cancel_entry_2, pass_user_data=True))
+    dp.add_handler(RegexHandler("№ 2: ", cancel_entry_2, pass_user_data=True))
+
+    dp.add_handler(CommandHandler("№ 3: ", cancel_entry_3, pass_user_data=True))
+    dp.add_handler(RegexHandler("№ 3: ", cancel_entry_3, pass_user_data=True))
 
     dp.add_handler(CommandHandler("Мои записи", my_entry, pass_user_data=True))
     dp.add_handler(RegexHandler("Мои записи", my_entry, pass_user_data=True))
 
     dp.add_handler(CommandHandler("Вернуться в главное меню", greet_user, pass_user_data=True))
     dp.add_handler(RegexHandler("Вернуться в главное меню", greet_user, pass_user_data=True))
-
-    # dp.add_handler(CommandHandler("lol", info))
-    # dp.add_handler(RegexHandler("lol", info))
 
     dp.add_handler(MessageHandler(Filters.text, talk_to_me))
 
@@ -421,3 +456,9 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+'''попробовать добавить entry point и новые states для запуска другой инлайн клавиатуры'''
+
+'''заменить 'запись' на добавить запись (кнопка и так смотрится неплохо) запись - не нужна'''
+
+'''отмена нескольких услуг не оправдывает себя, предлагаю удалить'''
