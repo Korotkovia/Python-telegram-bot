@@ -18,7 +18,7 @@ logging.basicConfig(format='%(name)s - %(levelname)s - %(message)s',
 
 logger = logging.getLogger(__name__)
 
-FIRST, SECOND, THIRD, FOURTH = range(4)
+FIRST, SECOND, THIRD, FOURTH, FIVE = range(5)
 
 conn = mysql.connector.connect(host='mysql.j949396.myjino.ru',
                                database='j949396',
@@ -303,7 +303,6 @@ def get_contact(bot, update, user_data):
 
 def my_entry(bot, update, user_data):
     # функция вывод информации о записях
-
     if user_data == {}:
         update.message.reply_text('У вас нет записей {}'.format(smile_10),
                                   reply_markup=menu_keyboard)
@@ -312,48 +311,51 @@ def my_entry(bot, update, user_data):
         cursor.execute(sql)
         data_base = cursor.fetchall()
 
-        lol_keyboard = []
-
         row = []
         row_1 = []
         row_2 = []
 
-        words = ['№ 1: ', '№ 2: ', '№ 3: ']
-
         x = []
+
+        keyboard = []
 
         for z in data_base:
             if user_data.get('number') == z[4]:
-                x.extend((z[0], z[3]))
-
+                x.extend((z[0], z[1], z[3]))
         if len(x) == 2:
-            row.append(words[0] + x[0] + ',' + x[1])
+            row.append(InlineKeyboardButton((x[0] + ', ' + x[1] + ', ' + x[2]), callback_data=1))
         elif len(x) == 4:
-            row.append(words[0] + x[0] + ',' + x[1])
-            row_1.append(words[1] + x[2] + ',' + x[3])
+            row.append(InlineKeyboardButton((x[0] + ', ' + x[1] + ', ' + x[2]), callback_data=1))
+            row_1.append(InlineKeyboardButton((x[3] + ', ' + x[4] + ', ' + x[5]), callback_data=2))
         elif len(x) > 4:
-            row.append(words[0] + x[0] + ',' + x[1])
-            row_1.append(words[1] + x[2] + ',' + x[3])
-            row_2.append(words[2] + x[4] + ',' + x[5])
+            row.append(InlineKeyboardButton((x[0] + ', ' + x[1] + ', ' + x[2]), callback_data=1))
+            row_1.append(InlineKeyboardButton((x[3] + ', ' + x[4] + ', ' + x[5]), callback_data=2))
+            row_2.append(InlineKeyboardButton((x[6] + ', ' + x[7] + ', ' + x[8]), callback_data=3))
         else:
             update.message.reply_text('У вас нет записей {}'.format(smile_10),
                                       reply_markup=start_keyboard)
 
-        lol_keyboard.extend((row, row_1, row_2, ['Вернуться в главное меню']))
+        keyboard.append(row)
+        keyboard.append(row_1)
+        keyboard.append(row_2)
 
-        reply_markup = ReplyKeyboardMarkup(lol_keyboard, resize_keyboard=True)
+        reply_markup = InlineKeyboardMarkup(keyboard)
 
-        # update.message.reply_text('Список ваших записей:', reply_markup=reply_markup)
-
-        update.message.reply_text("Услуга: " + x[0] + "\n"
-                                  "Имя мастера: " + user_data.get('name') + "\n"
-                                  "Дата: " + user_data.get('date') + "\n"
-                                  "Время: " + user_data.get('time') + "\n"
-                                  "Клиент: " + user_data.get('first_name') + ' ' + user_data.get('last_name'),
+        update.message.reply_text('Клиент: ' + user_data.get('first_name') + ' ' + user_data.get('last_name') + '\n'
+                                  + '\n'
+                                  'Здесь краткая информация о ваших записях:' + '\n'
+                                  + '\n'  
+                                  'Чтобы отменить запись - нажмите на нее',
                                   reply_markup=reply_markup)
 
+        return FIVE
 
-def cancel_entry_1(bot, update, user_data):
+
+def cancel_entries(bot, update, user_data):
+
+    query = update.callback_query
+    service = query.data
+
     sql = "SELECT * FROM record_info"
     cursor.execute(sql)
     data_base = cursor.fetchall()
@@ -361,38 +363,24 @@ def cancel_entry_1(bot, update, user_data):
     for data_list in data_base:
         if user_data.get('number') in data_list[4]:
             info_list.append(data_list[0])
-    a = (info_list[0], user_data.get('number'))
-    cursor.execute("DELETE FROM record_info WHERE service = %s and number = %s", a)
-    conn.commit()
-    update.message.reply_text('Запись отменена!', reply_markup=my_entry(bot, update, user_data))
 
+    if service == '1':
+        a = (info_list[0], user_data.get('number'))
+        cursor.execute("DELETE FROM record_info WHERE service = %s and number = %s", a)
+        conn.commit()
+        update.message.reply_text('Запись отменена!', reply_markup=my_entry(bot, update, user_data))
 
-def cancel_entry_2(bot, update, user_data):
-    sql = "SELECT * FROM record_info"
-    cursor.execute(sql)
-    data_base = cursor.fetchall()
-    info_list = []
-    for data_list in data_base:
-        if user_data.get('number') in data_list[4]:
-            info_list.append(data_list[0])
-    a = (info_list[1], user_data.get('number'))
-    cursor.execute("DELETE FROM record_info WHERE service = %s and number = %s", a)
-    conn.commit()
-    update.message.reply_text('Запись отменена!', reply_markup=my_entry(bot, update, user_data))
+    elif service == '2':
+        a = (info_list[1], user_data.get('number'))
+        cursor.execute("DELETE FROM record_info WHERE service = %s and number = %s", a)
+        conn.commit()
+        update.message.reply_text('Запись отменена!', reply_markup=my_entry(bot, update, user_data))
 
-
-def cancel_entry_3(bot, update, user_data):
-    sql = "SELECT * FROM record_info"
-    cursor.execute(sql)
-    data_base = cursor.fetchall()
-    info_list = []
-    for data_list in data_base:
-        if user_data.get('number') in data_list[4]:
-            info_list.append(data_list[0])
-    a = (info_list[2], user_data.get('number'))
-    cursor.execute("DELETE FROM record_info WHERE service = %s and number = %s", a)
-    conn.commit()
-    update.message.reply_text('Запись отменена!', reply_markup=my_entry(bot, update, user_data))
+    elif service == '3':
+        a = (info_list[2], user_data.get('number'))
+        cursor.execute("DELETE FROM record_info WHERE service = %s and number = %s", a)
+        conn.commit()
+        update.message.reply_text('Запись отменена!', reply_markup=my_entry(bot, update, user_data))
 
 
 def info(bot, update):
@@ -413,12 +401,16 @@ def main():
 
     conv_handler = ConversationHandler(
         entry_points=[RegexHandler('Запись', choose_service, pass_user_data=True),
-                      RegexHandler('Добавить запись', choose_service, pass_user_data=True)],
+                      RegexHandler('Добавить запись', choose_service, pass_user_data=True),
+                      RegexHandler('Мои записи', my_entry, pass_user_data=True)
+                      ],
         states={
             FIRST: [CallbackQueryHandler(choose_master, pass_user_data=True)],
             SECOND: [CallbackQueryHandler(calendar, pass_user_data=True)],
             THIRD: [CallbackQueryHandler(time, pass_user_data=True)],
-            FOURTH: [CallbackQueryHandler(contact, pass_user_data=True)]
+            FOURTH: [CallbackQueryHandler(contact, pass_user_data=True)],
+            FIVE: [CallbackQueryHandler(cancel_entries, pass_user_data=True)],
+
         },
         fallbacks=[MessageHandler(Filters.contact, get_contact, pass_user_data=True)],
         allow_reentry=True
@@ -433,17 +425,17 @@ def main():
     dp.add_handler(CommandHandler("Отменить все записи", cancel_record, pass_user_data=True))
     dp.add_handler(RegexHandler("Отменить все записи", cancel_record, pass_user_data=True))
 
-    dp.add_handler(CommandHandler("№ 1: ", cancel_entry_1, pass_user_data=True))
-    dp.add_handler(RegexHandler("№ 1: ", cancel_entry_1, pass_user_data=True))
+    # dp.add_handler(CommandHandler("№ 1: ", cancel_entry_1, pass_user_data=True))
+    # dp.add_handler(RegexHandler("№ 1: ", cancel_entry_1, pass_user_data=True))
+    #
+    # dp.add_handler(CommandHandler("№ 2: ", cancel_entry_2, pass_user_data=True))
+    # dp.add_handler(RegexHandler("№ 2: ", cancel_entry_2, pass_user_data=True))
+    #
+    # dp.add_handler(CommandHandler("№ 3: ", cancel_entry_3, pass_user_data=True))
+    # dp.add_handler(RegexHandler("№ 3: ", cancel_entry_3, pass_user_data=True))
 
-    dp.add_handler(CommandHandler("№ 2: ", cancel_entry_2, pass_user_data=True))
-    dp.add_handler(RegexHandler("№ 2: ", cancel_entry_2, pass_user_data=True))
-
-    dp.add_handler(CommandHandler("№ 3: ", cancel_entry_3, pass_user_data=True))
-    dp.add_handler(RegexHandler("№ 3: ", cancel_entry_3, pass_user_data=True))
-
-    dp.add_handler(CommandHandler("Мои записи", my_entry, pass_user_data=True))
-    dp.add_handler(RegexHandler("Мои записи", my_entry, pass_user_data=True))
+    # dp.add_handler(CommandHandler("Мои записи", my_entry, pass_user_data=True))
+    # dp.add_handler(RegexHandler("Мои записи", my_entry, pass_user_data=True))
 
     dp.add_handler(CommandHandler("Вернуться в главное меню", greet_user, pass_user_data=True))
     dp.add_handler(RegexHandler("Вернуться в главное меню", greet_user, pass_user_data=True))
