@@ -18,7 +18,7 @@ logging.basicConfig(format='%(name)s - %(levelname)s - %(message)s',
 
 logger = logging.getLogger(__name__)
 
-FIRST, SECOND, THIRD, FOURTH, FIVE = range(5)
+FIRST, SECOND, THIRD, FOURTH, FIVE, = range(5)
 
 conn = mysql.connector.connect(host='mysql.j949396.myjino.ru',
                                database='j949396',
@@ -27,10 +27,10 @@ conn = mysql.connector.connect(host='mysql.j949396.myjino.ru',
 
 cursor = conn.cursor()
 
-smile = emojize(':pencil:', use_aliases=True)
+smile = emojize(':heavy_plus_sign:', use_aliases=True)
 smile_2 = emojize(':ledger:', use_aliases=True)
 smile_3 = emojize(':information_source:', use_aliases=True)
-smile_4 = emojize(':x:', use_aliases=True)
+# smile_4 = emojize(':x:', use_aliases=True)
 smile_5 = emojize(':calendar:', use_aliases=True)
 smile_6 = emojize(':man:', use_aliases=True)
 smile_7 = emojize(':scissors:', use_aliases=True)
@@ -42,17 +42,17 @@ smile_12 = emojize(':barber:', use_aliases=True)
 smile_13 = emojize(':leftwards_arrow_with_hook:', use_aliases=True)
 
 
-start_keyboard = ReplyKeyboardMarkup([['Запись {}'.format(smile)],
+start_keyboard = ReplyKeyboardMarkup([['Добавить запись {}'.format(smile)],
                                       ['Мои записи {}'.format(smile_2),
                                        'О нас {}'.format(smile_3)]],
                                      resize_keyboard=True,
                                      one_time_keyboard=True)
 
-start_keyboard_2 = ReplyKeyboardMarkup([['Добавить запись {}'.format(smile)],
-                                        ['Мои записи{}'.format(smile_2),
-                                         'Отменить все записи{}'.format(smile_4)]],
-                                       resize_keyboard=True,
-                                       one_time_keyboard=True)
+# start_keyboard_2 = ReplyKeyboardMarkup([['Добавить запись {}'.format(smile)],
+#                                         ['Мои записи{}'.format(smile_2),
+#                                          'Отменить все записи{}'.format(smile_4)]],
+#                                        resize_keyboard=True,
+#                                        one_time_keyboard=True)
 
 menu_keyboard = ReplyKeyboardMarkup([['Вернуться в главное меню {}'.format(smile_13)]],
                                     resize_keyboard=True)
@@ -64,34 +64,29 @@ def talk_to_me(bot, update):
 
 def greet_user(bot, update, user_data):
     # функция - /start
-
-    if user_data == {}:
-        text = 'Вас приветствует salon_service_bot! {}'.format(smile_12)
-        update.message.reply_text(text, reply_markup=start_keyboard)
-    else:
-        text_2 = 'Выберите дальнейшее действие:'
-        update.message.reply_text(text_2, reply_markup=start_keyboard_2)
+    text = 'Вас приветствует salon_service_bot! {}'.format(smile_12)
+    update.message.reply_text(text, reply_markup=start_keyboard)
 
 
-def cancel_record(bot, update, user_data):
-    sql = "SELECT number FROM record_info"
-    cursor.execute(sql)
-    data_base = cursor.fetchall()
-
-    if user_data == {}:
-        update.message.reply_text('У вас нет записей {}'.format(smile_10),
-                                  reply_markup=start_keyboard)
-    else:
-        for record in data_base:
-            a = user_data.get('number')
-            cursor.execute("DELETE FROM record_info WHERE number = %s" % a)
-            user_data.clear()
-            print(user_data, 'Запись отменена!')
-            conn.commit()
-            update.message.reply_text('Вы отменили  все записи {}'.format(smile_9),
-                                      reply_markup=start_keyboard)
-
-    greet_user(bot, update, user_data)
+# def cancel_record(bot, update, user_data):
+#     sql = "SELECT number FROM record_info"
+#     cursor.execute(sql)
+#     data_base = cursor.fetchall()
+#
+#     if user_data == {}:
+#         update.message.reply_text('У вас нет записей {}'.format(smile_10),
+#                                   reply_markup=start_keyboard)
+#     else:
+#         for record in data_base:
+#             a = user_data.get('number')
+#             cursor.execute("DELETE FROM record_info WHERE number = %s" % a)
+#             user_data.clear()
+#             print(user_data, 'Запись отменена!')
+#             conn.commit()
+#             update.message.reply_text('Вы отменили  все записи {}'.format(smile_9),
+#                                       reply_markup=start_keyboard)
+#
+#     greet_user(bot, update, user_data)
 
 
 def choose_service(bot, update, user_data):
@@ -314,6 +309,8 @@ def my_entry(bot, update, user_data):
         row = []
         row_1 = []
         row_2 = []
+        all_entries = []
+        menu = []
 
         x = []
 
@@ -322,22 +319,23 @@ def my_entry(bot, update, user_data):
         for z in data_base:
             if user_data.get('number') == z[4]:
                 x.extend((z[0], z[1], z[3]))
-        if len(x) == 2:
+
+        if len(x) == 3:
             row.append(InlineKeyboardButton((x[0] + ', ' + x[1] + ', ' + x[2]), callback_data=1))
-        elif len(x) == 4:
+        elif len(x) == 6:
             row.append(InlineKeyboardButton((x[0] + ', ' + x[1] + ', ' + x[2]), callback_data=1))
             row_1.append(InlineKeyboardButton((x[3] + ', ' + x[4] + ', ' + x[5]), callback_data=2))
-        elif len(x) > 4:
+            all_entries.append(InlineKeyboardButton('!!! Отменить все записи !!!', callback_data='Отменить все записи'))
+        elif len(x) > 6:
             row.append(InlineKeyboardButton((x[0] + ', ' + x[1] + ', ' + x[2]), callback_data=1))
             row_1.append(InlineKeyboardButton((x[3] + ', ' + x[4] + ', ' + x[5]), callback_data=2))
             row_2.append(InlineKeyboardButton((x[6] + ', ' + x[7] + ', ' + x[8]), callback_data=3))
-        else:
-            update.message.reply_text('У вас нет записей {}'.format(smile_10),
-                                      reply_markup=start_keyboard)
+            all_entries.append(InlineKeyboardButton('!!! Отменить все записи !!!', callback_data='Отменить все записи'))
 
         keyboard.append(row)
         keyboard.append(row_1)
         keyboard.append(row_2)
+        keyboard.append(all_entries)
 
         reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -345,20 +343,26 @@ def my_entry(bot, update, user_data):
                                   + '\n'
                                   'Здесь краткая информация о ваших записях:' + '\n'
                                   + '\n'  
-                                  'Чтобы отменить запись - нажмите на нее',
+                                  'Чтобы отменить запись - нажмите на нее!',
                                   reply_markup=reply_markup)
 
         return FIVE
 
 
 def cancel_entries(bot, update, user_data):
-
+    # информация о записях, а также их отмена по одной
     query = update.callback_query
     service = query.data
 
     sql = "SELECT * FROM record_info"
     cursor.execute(sql)
     data_base = cursor.fetchall()
+
+    #удалить потом
+    sql_2 = "SELECT number FROM record_info"
+    cursor.execute(sql_2)
+    data_base_2 = cursor.fetchall()
+
     info_list = []
     for data_list in data_base:
         if user_data.get('number') in data_list[4]:
@@ -368,19 +372,55 @@ def cancel_entries(bot, update, user_data):
         a = (info_list[0], user_data.get('number'))
         cursor.execute("DELETE FROM record_info WHERE service = %s and number = %s", a)
         conn.commit()
-        update.message.reply_text('Запись отменена!', reply_markup=my_entry(bot, update, user_data))
+        print('Запись отменена!')
+        # bot.edit_message_text(text='Запись отменена!',
+        #                       chat_id=query.message.chat_id,
+        #                       message_id=query.message.message_id,
+        #                       reply_markup=telegramcalendar.create_calendar_vova())
+
+        ''' просто попробовал поменять клаву на другую'''
+
+        x = ['lol', 'anabol']
+
+        keyboard = []
+
+        row = []
+
+        row.append(InlineKeyboardButton(x[0], callback_data='lol'))
+
+        keyboard.append(row)
+
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        bot.edit_message_reply_markup(chat_id=query.message.chat_id,
+                                      message_id=query.message.message_id,
+                                      reply_markup=reply_markup)
+
+        ''' просто попробовал поменять клаву на другую'''
 
     elif service == '2':
         a = (info_list[1], user_data.get('number'))
         cursor.execute("DELETE FROM record_info WHERE service = %s and number = %s", a)
         conn.commit()
+        print('Запись отменена!')
         update.message.reply_text('Запись отменена!', reply_markup=my_entry(bot, update, user_data))
 
     elif service == '3':
         a = (info_list[2], user_data.get('number'))
         cursor.execute("DELETE FROM record_info WHERE service = %s and number = %s", a)
         conn.commit()
+        print('Запись отменена!')
         update.message.reply_text('Запись отменена!', reply_markup=my_entry(bot, update, user_data))
+
+    elif service == 'Отменить все записи':
+        # переделать блок
+        for record in data_base_2:
+            a = user_data.get('number')
+            cursor.execute("DELETE FROM record_info WHERE number = %s" % a)
+            user_data.clear()
+            print('Отменены все записи!')
+            conn.commit()
+            update.message.reply_text('Вы отменили  все записи {}'.format(smile_9),
+                                      reply_markup=start_keyboard)
 
 
 def info(bot, update):
@@ -400,17 +440,16 @@ def main():
     dp = mybot.dispatcher
 
     conv_handler = ConversationHandler(
-        entry_points=[RegexHandler('Запись', choose_service, pass_user_data=True),
-                      RegexHandler('Добавить запись', choose_service, pass_user_data=True),
+        entry_points=[RegexHandler('Добавить запись', choose_service, pass_user_data=True),
                       RegexHandler('Мои записи', my_entry, pass_user_data=True)
                       ],
+
         states={
             FIRST: [CallbackQueryHandler(choose_master, pass_user_data=True)],
             SECOND: [CallbackQueryHandler(calendar, pass_user_data=True)],
             THIRD: [CallbackQueryHandler(time, pass_user_data=True)],
             FOURTH: [CallbackQueryHandler(contact, pass_user_data=True)],
             FIVE: [CallbackQueryHandler(cancel_entries, pass_user_data=True)],
-
         },
         fallbacks=[MessageHandler(Filters.contact, get_contact, pass_user_data=True)],
         allow_reentry=True
@@ -422,20 +461,8 @@ def main():
     dp.add_handler(CommandHandler("О нас", info))
     dp.add_handler(RegexHandler("О нас", info))
 
-    dp.add_handler(CommandHandler("Отменить все записи", cancel_record, pass_user_data=True))
-    dp.add_handler(RegexHandler("Отменить все записи", cancel_record, pass_user_data=True))
-
-    # dp.add_handler(CommandHandler("№ 1: ", cancel_entry_1, pass_user_data=True))
-    # dp.add_handler(RegexHandler("№ 1: ", cancel_entry_1, pass_user_data=True))
-    #
-    # dp.add_handler(CommandHandler("№ 2: ", cancel_entry_2, pass_user_data=True))
-    # dp.add_handler(RegexHandler("№ 2: ", cancel_entry_2, pass_user_data=True))
-    #
-    # dp.add_handler(CommandHandler("№ 3: ", cancel_entry_3, pass_user_data=True))
-    # dp.add_handler(RegexHandler("№ 3: ", cancel_entry_3, pass_user_data=True))
-
-    # dp.add_handler(CommandHandler("Мои записи", my_entry, pass_user_data=True))
-    # dp.add_handler(RegexHandler("Мои записи", my_entry, pass_user_data=True))
+    # dp.add_handler(CommandHandler("Отменить все записи", cancel_record, pass_user_data=True))
+    # dp.add_handler(RegexHandler("Отменить все записи", cancel_record, pass_user_data=True))
 
     dp.add_handler(CommandHandler("Вернуться в главное меню", greet_user, pass_user_data=True))
     dp.add_handler(RegexHandler("Вернуться в главное меню", greet_user, pass_user_data=True))
@@ -449,8 +476,5 @@ def main():
 if __name__ == '__main__':
     main()
 
-'''попробовать добавить entry point и новые states для запуска другой инлайн клавиатуры'''
-
 '''заменить 'запись' на добавить запись (кнопка и так смотрится неплохо) запись - не нужна'''
-
-'''отмена нескольких услуг не оправдывает себя, предлагаю удалить'''
+'''отменить все записи не нужна '''
