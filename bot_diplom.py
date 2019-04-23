@@ -57,7 +57,6 @@ start_keyboard = ReplyKeyboardMarkup([['Добавить запись {}'.format
 menu_keyboard = ReplyKeyboardMarkup([['Вернуться в главное меню {}'.format(smile_13)]],
                                     resize_keyboard=True)
 
-
 def talk_to_me(bot, update):
     update.message.reply_text('Нажмите /start для запуска бота')
 
@@ -196,9 +195,6 @@ def calendar(bot, update, user_data):
 
     user_data['name'] = query.data
 
-    # global mylist
-    # mylist = []
-
     return THIRD
 
 
@@ -298,53 +294,66 @@ def get_contact(bot, update, user_data):
 
 def my_entry(bot, update, user_data):
     # функция вывод информации о записях
+
+    sql = "SELECT * FROM record_info"
+    cursor.execute(sql)
+    data_base = cursor.fetchall()
+
     if user_data == {}:
         update.message.reply_text('У вас нет записей {}'.format(smile_10),
-                                  reply_markup=menu_keyboard)
+                                  reply_markup=start_keyboard)
     else:
-        sql = "SELECT * FROM record_info"
-        cursor.execute(sql)
-        data_base = cursor.fetchall()
-
         row = []
         row_1 = []
         row_2 = []
         all_entries = []
-        menu = []
 
-        x = []
+        info = []
 
         keyboard = []
 
         for z in data_base:
             if user_data.get('number') == z[4]:
-                x.extend((z[0], z[1], z[3]))
+                info.extend((z[0], z[1], z[3]))
 
-        if len(x) == 3:
-            row.append(InlineKeyboardButton((x[0] + ', ' + x[1] + ', ' + x[2]), callback_data=1))
-        elif len(x) == 6:
-            row.append(InlineKeyboardButton((x[0] + ', ' + x[1] + ', ' + x[2]), callback_data=1))
-            row_1.append(InlineKeyboardButton((x[3] + ', ' + x[4] + ', ' + x[5]), callback_data=2))
-            all_entries.append(InlineKeyboardButton('!!! Отменить все записи !!!', callback_data='Отменить все записи'))
-        elif len(x) > 6:
-            row.append(InlineKeyboardButton((x[0] + ', ' + x[1] + ', ' + x[2]), callback_data=1))
-            row_1.append(InlineKeyboardButton((x[3] + ', ' + x[4] + ', ' + x[5]), callback_data=2))
-            row_2.append(InlineKeyboardButton((x[6] + ', ' + x[7] + ', ' + x[8]), callback_data=3))
-            all_entries.append(InlineKeyboardButton('!!! Отменить все записи !!!', callback_data='Отменить все записи'))
+        if len(info) == 3:
+            row.append(InlineKeyboardButton((', '.join(info[0:3])), callback_data='1'))
+            keyboard.append(row)
 
-        keyboard.append(row)
-        keyboard.append(row_1)
-        keyboard.append(row_2)
-        keyboard.append(all_entries)
+        elif len(info) == 6:
+            row.append(InlineKeyboardButton((', '.join(info[0:3])), callback_data='1'))
+            row_1.append(InlineKeyboardButton((', '.join(info[3:6])), callback_data='2'))
+            all_entries.append(InlineKeyboardButton('!!! Отменить все записи !!!', callback_data='Отменить все записи'))
+            keyboard.extend((row, row_1, all_entries))
+
+        elif len(info) > 6:
+            row.append(InlineKeyboardButton((', '.join(info[0:3])), callback_data='1'))
+            row_1.append(InlineKeyboardButton((', '.join(info[3:6])), callback_data='2'))
+            row_2.append(InlineKeyboardButton((', '.join(info[6:9])), callback_data='3'))
+            all_entries.append(InlineKeyboardButton('!!! Отменить все записи !!!', callback_data='Отменить все записи'))
+            keyboard.extend((row, row_1, row_2, all_entries))
+
+        else:
+            bot.delete_message(chat_id=update.callback_query.from_user.id,
+                               message_id=update.callback_query.message.message_id)
+            bot.send_message(chat_id=update.callback_query.from_user.id,
+                             text='У вас нет записей {}'.format(smile_10),
+                             reply_markup=start_keyboard)
 
         reply_markup = InlineKeyboardMarkup(keyboard)
 
-        update.message.reply_text('Клиент: ' + user_data.get('first_name') + ' ' + user_data.get('last_name') + '\n'
-                                  + '\n'
-                                  'Здесь краткая информация о ваших записях:' + '\n'
-                                  + '\n'  
-                                  'Чтобы отменить запись - нажмите на нее!',
-                                  reply_markup=reply_markup)
+        try:
+            update.message.reply_text('Клиент: ',
+                                      reply_markup=reply_markup)
+        except AttributeError:
+            # bot.send_message(chat_id=update.callback_query.from_user.id,
+            #                  text='У вас нет записей {}'.format(smile_10),
+            #                  reply_markup=reply_markup)
+            # bot.delete_message(chat_id=update.callback_query.from_user.id,
+            #                    message_id=update.callback_query.message.message_id)
+            bot.edit_message_reply_markup(chat_id=update.callback_query.message.chat_id,
+                                          message_id=update.callback_query.message.message_id,
+                                          reply_markup=reply_markup)
 
         return FIVE
 
@@ -373,43 +382,27 @@ def cancel_entries(bot, update, user_data):
         cursor.execute("DELETE FROM record_info WHERE service = %s and number = %s", a)
         conn.commit()
         print('Запись отменена!')
-        # bot.edit_message_text(text='Запись отменена!',
-        #                       chat_id=query.message.chat_id,
-        #                       message_id=query.message.message_id,
-        #                       reply_markup=telegramcalendar.create_calendar_vova())
-
-        ''' просто попробовал поменять клаву на другую'''
-
-        x = ['lol', 'anabol']
-
-        keyboard = []
-
-        row = []
-
-        row.append(InlineKeyboardButton(x[0], callback_data='lol'))
-
-        keyboard.append(row)
-
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        bot.edit_message_reply_markup(chat_id=query.message.chat_id,
-                                      message_id=query.message.message_id,
-                                      reply_markup=reply_markup)
-
-        ''' просто попробовал поменять клаву на другую'''
+        bot.send_message(chat_id=update.callback_query.from_user.id,
+                         text='Есть!',
+                         reply_markup=my_entry(bot, update, user_data))
 
     elif service == '2':
         a = (info_list[1], user_data.get('number'))
         cursor.execute("DELETE FROM record_info WHERE service = %s and number = %s", a)
         conn.commit()
         print('Запись отменена!')
-        update.message.reply_text('Запись отменена!', reply_markup=my_entry(bot, update, user_data))
+        bot.send_message(chat_id=update.callback_query.from_user.id,
+                         text='Есть!',
+                         reply_markup=my_entry(bot, update, user_data))
 
     elif service == '3':
         a = (info_list[2], user_data.get('number'))
         cursor.execute("DELETE FROM record_info WHERE service = %s and number = %s", a)
         conn.commit()
         print('Запись отменена!')
-        update.message.reply_text('Запись отменена!', reply_markup=my_entry(bot, update, user_data))
+        bot.send_message(chat_id=update.callback_query.from_user.id,
+                         text='Есть!',
+                         reply_markup=my_entry(bot, update, user_data))
 
     elif service == 'Отменить все записи':
         # переделать блок
@@ -419,8 +412,11 @@ def cancel_entries(bot, update, user_data):
             user_data.clear()
             print('Отменены все записи!')
             conn.commit()
-            update.message.reply_text('Вы отменили  все записи {}'.format(smile_9),
-                                      reply_markup=start_keyboard)
+        bot.delete_message(chat_id=update.callback_query.from_user.id,
+                           message_id=query.message.message_id)
+        bot.send_message(chat_id=update.callback_query.from_user.id,
+                         text='У вас нет записей {}'.format(smile_10),
+                         reply_markup=start_keyboard)
 
 
 def info(bot, update):
@@ -466,6 +462,9 @@ def main():
 
     dp.add_handler(CommandHandler("Вернуться в главное меню", greet_user, pass_user_data=True))
     dp.add_handler(RegexHandler("Вернуться в главное меню", greet_user, pass_user_data=True))
+
+    # dp.add_handler(CommandHandler("Вернуться к моим записям", my_entry, pass_user_data=True))
+    # dp.add_handler(RegexHandler("Вернуться к моим записям", my_entry, pass_user_data=True))
 
     dp.add_handler(MessageHandler(Filters.text, talk_to_me))
 
