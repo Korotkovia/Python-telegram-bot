@@ -110,7 +110,7 @@ def create_calendar_vova(year=None, month=None):
 
     active_days = int(now.strftime("%d"))
 
-    vova_list = [5, 7, 10, 16, 17, 18, 25, 26]
+    vova_list = [5, 7, 10, 12, 16, 17, 18, 25, 26, 30, 31]
 
     for week in my_calendar:
         row = []
@@ -126,6 +126,9 @@ def create_calendar_vova(year=None, month=None):
                 else:
                     row.append(InlineKeyboardButton(" ",
                                                     callback_data=data_ignore))
+            elif month < now.month:
+                row.append(InlineKeyboardButton(" ",
+                                                callback_data=data_ignore))
             else:
                 if day in vova_list:
                     row.append(InlineKeyboardButton(str(day),
