@@ -122,6 +122,10 @@ def choose_master(bot, update, user_data):
     query = update.callback_query
     name = query.data
     # Клавиатура с услугами
+
+    # from_services = [masters[0] for masters in data_base if name in masters]
+    # a = ''.join(from_services)
+
     counter = []
     for masters in data_base:
         if name in masters:
@@ -288,21 +292,21 @@ def get_contact(bot, update, user_data):
 
     top_zapis = (' '.join(zapis_1[0:2]))
     dates = datetime.datetime.strptime(top_zapis, "%Y-%m-%d %H:%M")
-    lolkin = timedelta(hours=6, minutes=54)
+    lolkin = timedelta(hours=6, minutes=5)
     global topcheg
     topcheg = dates + lolkin
     print(topcheg)
 
     top_zapis_2 = (' '.join(zapis_1[2:4]))
     dates_2 = datetime.datetime.strptime(top_zapis_2, "%Y-%m-%d %H:%M")
-    lolkin_2 = timedelta(hours=6, minutes=55)
+    lolkin_2 = timedelta(hours=6, minutes=6)
     global topcheg_2
     topcheg_2 = dates_2 + lolkin_2
     print(topcheg_2)
 
     top_zapis_3 = (' '.join(zapis_1[4:6]))
     dates_3 = datetime.datetime.strptime(top_zapis_3, "%Y-%m-%d %H:%M")
-    lolkin_3 = timedelta(hours=6, minutes=56)
+    lolkin_3 = timedelta(hours=6, minutes=7)
     global topcheg_3
     topcheg_3 = dates_3 + lolkin_3
     print(topcheg_3)
@@ -328,11 +332,11 @@ def my_entry(bot, update, user_data):
     else:
         check_price = []
 
-        info = []
+        info_10 = []
 
         for z in data_base:
             if user_data.get('number') == z[4]:
-                info.extend((z[0:4]))
+                info_10.extend((z[0:4]))
                 for m in data_base_2:
                     if z[0] in m[2]:
                         check_price.append(m[3])
@@ -346,20 +350,20 @@ def my_entry(bot, update, user_data):
 
         keyboard = []
 
-        if len(info) == 4:
-            row.append(InlineKeyboardButton((', '.join(info[0:4])), callback_data='1'))
+        if len(info_10) == 4:
+            row.append(InlineKeyboardButton((', '.join(info_10[0:4])), callback_data='1'))
             main_menu.append(InlineKeyboardButton('Вернуться в главное меню {}'.format(smile_13), callback_data='0'))
             keyboard.extend((row, main_menu))
-        elif len(info) == 8:
-            row.append(InlineKeyboardButton((', '.join(info[0:4])), callback_data='1'))
-            row_1.append(InlineKeyboardButton((', '.join(info[4:8])), callback_data='2'))
+        elif len(info_10) == 8:
+            row.append(InlineKeyboardButton((', '.join(info_10[0:4])), callback_data='1'))
+            row_1.append(InlineKeyboardButton((', '.join(info_10[4:8])), callback_data='2'))
             all_entries.append(InlineKeyboardButton('Отменить все записи {}'.format(smile_4), callback_data='Отмена'))
             main_menu.append(InlineKeyboardButton('Вернуться в главное меню {}'.format(smile_13), callback_data='0'))
             keyboard.extend((row, row_1, all_entries, main_menu))
-        elif len(info) > 8:
-            row.append(InlineKeyboardButton((', '.join(info[0:4])), callback_data='1'))
-            row_1.append(InlineKeyboardButton((', '.join(info[4:8])), callback_data='2'))
-            row_2.append(InlineKeyboardButton((', '.join(info[8:12])), callback_data='3'))
+        elif len(info_10) > 8:
+            row.append(InlineKeyboardButton((', '.join(info_10[0:4])), callback_data='1'))
+            row_1.append(InlineKeyboardButton((', '.join(info_10[4:8])), callback_data='2'))
+            row_2.append(InlineKeyboardButton((', '.join(info_10[8:12])), callback_data='3'))
             all_entries.append(InlineKeyboardButton('Отменить все записи {}'.format(smile_4), callback_data='Отмена'))
             main_menu.append(InlineKeyboardButton('Вернуться в главное меню {}'.format(smile_13), callback_data='0'))
             keyboard.extend((row, row_1, row_2, all_entries, main_menu))
@@ -411,7 +415,7 @@ def cancel_entries(bot, update, user_data, job_queue):
         conn.commit()
 
         """ Удаление напоминания """
-        spisok[0].schedule_removal()
+        job_queue.stop()
 
         bot.delete_message(chat_id=update.callback_query.from_user.id,
                            message_id=query.message.message_id)
@@ -429,7 +433,12 @@ def cancel_entries(bot, update, user_data, job_queue):
                        " and number = %s",
                        new_tuple)
         conn.commit()
-        spisok[0].schedule_removal()
+
+        if len(info_list) == 12:
+            spisok[0].schedule_removal()
+        elif len(info_list) == 8:
+            spisok[1].schedule_removal()
+
     elif service == '2':
         info_tuple = tuple(info_list[4:8])
         new_tuple = info_tuple + (user_data.get('number'),)
@@ -441,7 +450,12 @@ def cancel_entries(bot, update, user_data, job_queue):
                        " and number = %s",
                        new_tuple)
         conn.commit()
-        spisok[1].schedule_removal()
+
+        if len(info_list) == 12:
+            spisok[1].schedule_removal()
+        elif len(info_list) == 8:
+            spisok[2].schedule_removal()
+
     elif service == '3':
         info_tuple = tuple(info_list[8:12])
         new_tuple = info_tuple + (user_data.get('number'),)
@@ -495,11 +509,15 @@ def set_alarm(bot, update, job_queue, user_data):
     cursor.execute(sql)
     data_base = cursor.fetchall()
 
+    global vse_zapisi
     vse_zapisi = []
+    global info_9
+    info_9 = []
 
     for z in data_base:
         if user_data.get('number') == z[4]:
             vse_zapisi.append(z[4])
+            info_9.extend((z[0:4]))
 
     print(vse_zapisi)
 
@@ -507,10 +525,10 @@ def set_alarm(bot, update, job_queue, user_data):
         job_queue.run_once(alarm, when=topcheg, context=update.message.chat_id, name='lol')
 
     elif len(vse_zapisi) == 2:
-        job_queue.run_once(alarm, when=topcheg_2, context=update.message.chat_id, name='lol')
+        job_queue.run_once(alarm_1, when=topcheg_2, context=update.message.chat_id, name='lol')
 
     elif len(vse_zapisi) == 3:
-        job_queue.run_once(alarm, when=topcheg_3, context=update.message.chat_id, name='lol')
+        job_queue.run_once(alarm_2, when=topcheg_3, context=update.message.chat_id, name='lol')
 
     global spisok
     spisok = []
@@ -526,7 +544,17 @@ def set_alarm(bot, update, job_queue, user_data):
 
 @mq.queuedmessage
 def alarm(bot, job):
-    bot.send_message(chat_id=job.context, text="Здрасте")
+    bot.send_message(chat_id=job.context, text=('Запись 1' + ', '.join(info_9[0:4])))
+
+
+@mq.queuedmessage
+def alarm_1(bot, job):
+    bot.send_message(chat_id=job.context, text=('Запись 2' + ', '.join(info_9[4:8])))
+
+
+@mq.queuedmessage
+def alarm_2(bot, job):
+    bot.send_message(chat_id=job.context, text=('Запись 3' + ', '.join(info_9[8:12])))
 
 
 def main():
@@ -572,9 +600,5 @@ def main():
 if __name__ == '__main__':
     main()
 
-'''для джобов создание отдельной кнопки после отправки контактов'''
-'''хранение напоминалок в базе данных ?'''
-'''как удалить напоминалки ?'''
 '''executemany (executescript) несколько обращений к базе данных ?'''
-'''для календаря, убрать прошлый месяц now.month - timedelta'''
 '''для базы данных сделать условие с отключением через определенное время'''
