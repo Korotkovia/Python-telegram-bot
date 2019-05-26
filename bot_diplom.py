@@ -210,18 +210,13 @@ def contact(bot, update, user_data):
         user_data['time'] = query.data
 
 
-def get_contact(bot, update, user_data):
+def get_contact(bot, update, user_data, job_queue):
     """ Запись выбора пользователя в БД, создание переменных для напоминаний """
 
     print(update.message.contact)
     user_data['number'] = update.message.contact.phone_number
     user_data['first_name'] = update.message.contact.first_name
 
-    my_keyboard = ReplyKeyboardMarkup([['Отправить напоминание {}'.format(smile_14)],
-                                       ['Вернуться в главное меню {}'.format(smile_13)]],
-                                      resize_keyboard=True)
-    update.message.reply_text("Спасибо! \n Вы можете посмотреть информацию о своих записях в главном меню",
-                              reply_markup=my_keyboard)
     """ Запись всех данных в БД """
 
     user_dict = [i for i in dict.values(user_data)]
@@ -232,8 +227,6 @@ def get_contact(bot, update, user_data):
     cursor.execute(record_insert, record)
     conn.commit()
 
-
-def set_alarm(bot, update, job_queue, user_data):
     """ Создание напоминаний """
 
     sql = "SELECT * FROM record_info"
@@ -242,33 +235,34 @@ def set_alarm(bot, update, job_queue, user_data):
 
     global alarm_info
     alarm_info = []
-    notify_info = []
     user_entry = []
     for z in data_base:
         if user_data.get('number') == z[4]:
-            notify_info.append(z[4])
             alarm_info.extend((z[0:4]))
             user_entry.extend((z[2:4]))
 
-    alert = timedelta(hours=6, minutes=7)
+    alert = timedelta(hours=3, minutes=13)
 
-    if len(user_entry) == 2 and len(notify_info) == 1:
+    if len(user_entry) == 2:
         date_format = datetime.strptime((' '.join(user_entry[0:2])), "%Y-%m-%d %H:%M")
         notify = date_format + alert
+        print(notify)
         job_queue.run_once(alarm, when=notify, context=update.message.chat_id, name='job')
-    elif len(user_entry) == 4 and len(notify_info) == 2:
+    elif len(user_entry) == 4:
         date_format = datetime.strptime((' '.join(user_entry[2:4])), "%Y-%m-%d %H:%M")
         notify_1 = date_format + alert
+        print(notify_1)
         job_queue.run_once(alarm_1, when=notify_1, context=update.message.chat_id, name='job')
-    elif len(user_entry) == 6 and len(notify_info) == 3:
+    elif len(user_entry) == 6:
         date_format = datetime.strptime((' '.join(user_entry[4:6])), "%Y-%m-%d %H:%M")
         notify_2 = date_format + alert
+        print(notify_2)
         job_queue.run_once(alarm_2, when=notify_2, context=update.message.chat_id, name='job')
 
     global job_list
     job_list = [i for i in job_queue.get_jobs_by_name('job')]
 
-    update.message.reply_text("Напоминание создано!",
+    update.message.reply_text("Спасибо! \n Вы можете посмотреть информацию о своих записях в главном меню",
                               reply_markup=start_keyboard)
 
 
@@ -302,6 +296,7 @@ def my_entry(bot, update, user_data):
         update.message.reply_text('У вас нет записей {}'.format(smile_10),
                                   reply_markup=start_keyboard)
     else:
+        global check_price
         check_price = []
         entries = []
         for z in data_base:
@@ -385,12 +380,15 @@ def cancel_entries(bot, update, user_data, job_queue):
         conn.commit()
 
         """ Удаление напоминания """
-        if job_list != []:
+        try:
             if len(info_list) == 12:
                 job_list[0].schedule_removal()
             elif len(info_list) == 8:
-                job_list[1].schedule_removal()
-        elif job_list == []:
+                job_list[0].schedule_removal()
+            bot.send_message(chat_id=update.callback_query.from_user.id,
+                             text='Есть!',
+                             reply_markup=my_entry(bot, update, user_data))
+        except NameError:
             bot.send_message(chat_id=update.callback_query.from_user.id,
                              text='Есть!',
                              reply_markup=my_entry(bot, update, user_data))
@@ -400,18 +398,21 @@ def cancel_entries(bot, update, user_data, job_queue):
         cursor.execute("DELETE FROM record_info WHERE"
                        " service = %s and name = %s and date = %s and time = %s and number = %s",
                        new_tuple)
+        # del check_price[1]
         conn.commit()
 
-        if info_list != []:
-            bot.send_message(chat_id=update.callback_query.from_user.id,
-                             text='Есть!',
-                             reply_markup=my_entry(bot, update, user_data))
-        elif job_list != []:
-            if len(info_list) == 12:
-                job_list[1].schedule_removal()
-            elif len(info_list) == 8:
-                job_list[2].schedule_removal()
-
+        if len(job_list) == 3 and len(info_list) == 12:
+            print('убрали второй джоб')
+            job_list[1].schedule_removal()
+        elif len(job_list) == 3 and len(info_list) == 8:
+            print('убрали третий джоб')
+            job_list[2].schedule_removal()
+        elif len(job_list) == 2:
+            print('убрали второй джоб и джоба было 2')
+            job_list[1].schedule_removal()
+        bot.send_message(chat_id=update.callback_query.from_user.id,
+                         text='Есть!',
+                         reply_markup=my_entry(bot, update, user_data))
     elif service == '3':
         info_tuple = tuple(info_list[8:12])
         new_tuple = info_tuple + (user_data.get('number'),)
@@ -420,12 +421,11 @@ def cancel_entries(bot, update, user_data, job_queue):
                        new_tuple)
         conn.commit()
 
-        if job_list != []:
+        if len(job_list) == 3:
             job_list[2].schedule_removal()
-        elif job_list == []:
-            bot.send_message(chat_id=update.callback_query.from_user.id,
-                             text='Есть!',
-                             reply_markup=my_entry(bot, update, user_data))
+        bot.send_message(chat_id=update.callback_query.from_user.id,
+                         text='Есть!',
+                         reply_markup=my_entry(bot, update, user_data))
     elif service == 'Отмена':
         info_tuple = user_data.get('number')
         cursor.execute("DELETE FROM record_info WHERE number = %s" % info_tuple)
@@ -475,7 +475,7 @@ def main():
             FOURTH: [CallbackQueryHandler(contact, pass_user_data=True)],
             FIVE: [CallbackQueryHandler(cancel_entries, pass_user_data=True, pass_job_queue=True)],
         },
-        fallbacks=[MessageHandler(Filters.contact, get_contact, pass_user_data=True)],
+        fallbacks=[MessageHandler(Filters.contact, get_contact, pass_user_data=True, pass_job_queue=True)],
         allow_reentry=True
     )
     dp.add_handler(conv_handler)
@@ -488,8 +488,8 @@ def main():
     dp.add_handler(CommandHandler('Вернуться в главное меню', greet_user, pass_user_data=True))
     dp.add_handler(RegexHandler('Вернуться в главное меню', greet_user, pass_user_data=True))
 
-    dp.add_handler(CommandHandler('Отправить напоминание', set_alarm, pass_job_queue=True, pass_user_data=True))
-    dp.add_handler(RegexHandler('Отправить напоминание', set_alarm, pass_job_queue=True, pass_user_data=True))
+    # dp.add_handler(CommandHandler('Отправить напоминание', set_alarm, pass_job_queue=True, pass_user_data=True))
+    # dp.add_handler(RegexHandler('Отправить напоминание', set_alarm, pass_job_queue=True, pass_user_data=True))
 
     dp.add_handler(MessageHandler(Filters.text, talk_to_me))
 
@@ -499,3 +499,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+""" Cумма не пересчитывается """
