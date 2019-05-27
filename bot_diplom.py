@@ -29,29 +29,27 @@ conn = mysql.connector.connect(host='mysql.j949396.myjino.ru',
 
 cursor = conn.cursor()
 
-smile = emojize(':heavy_plus_sign:', use_aliases=True)
-smile_2 = emojize(':memo:', use_aliases=True)
-smile_3 = emojize(':information_source:', use_aliases=True)
-smile_4 = emojize(':x:', use_aliases=True)
-smile_5 = emojize(':calendar:', use_aliases=True)
-smile_6 = emojize(':man:', use_aliases=True)
-smile_7 = emojize(':scissors:', use_aliases=True)
-smile_8 = emojize(':clock230:', use_aliases=True)
-smile_9 = emojize(':white_check_mark:', use_aliases=True)
-smile_10 = emojize(':no_entry_sign:', use_aliases=True)
-smile_11 = emojize(':telephone_receiver:', use_aliases=True)
-smile_12 = emojize(':barber:', use_aliases=True)
-smile_13 = emojize(':leftwards_arrow_with_hook:', use_aliases=True)
-smile_14 = emojize(':email:', use_aliases=True)
+smiles = [emojize(':heavy_plus_sign:', use_aliases=True),
+          emojize(':memo:', use_aliases=True),
+          emojize(':information_source:', use_aliases=True),
+          emojize(':x:', use_aliases=True),
+          emojize(':calendar:', use_aliases=True),
+          emojize(':man:', use_aliases=True),
+          emojize(':scissors:', use_aliases=True),
+          emojize(':clock230:', use_aliases=True),
+          emojize(':white_check_mark:', use_aliases=True),
+          emojize(':no_entry_sign:', use_aliases=True),
+          emojize(':leftwards_arrow_with_hook:', use_aliases=True),
+          emojize(':email:', use_aliases=True)]
 
 
-start_keyboard = ReplyKeyboardMarkup([['Добавить запись {}'.format(smile)],
-                                      ['Мои записи {}'.format(smile_2),
-                                       'О нас {}'.format(smile_3)]],
+start_keyboard = ReplyKeyboardMarkup([['Добавить запись {}'.format(smiles[0])],
+                                      ['Мои записи {}'.format(smiles[1]),
+                                       'О нас {}'.format(smiles[2])]],
                                      resize_keyboard=True,
                                      one_time_keyboard=True)
 
-menu_keyboard = ReplyKeyboardMarkup([['Вернуться в главное меню {}'.format(smile_13)]],
+menu_keyboard = ReplyKeyboardMarkup([['Вернуться в главное меню {}'.format(smiles[10])]],
                                     resize_keyboard=True)
 
 
@@ -61,7 +59,7 @@ def talk_to_me(bot, update):
 
 def greet_user(bot, update, user_data):
     """ /start """
-    text = 'Вас приветствует salon_service_bot! {}'.format(smile_12)
+    text = 'Вас приветствует salon_service_bot!'
     update.message.reply_text(text, reply_markup=start_keyboard)
 
 
@@ -72,10 +70,14 @@ def choose_service(bot, update, user_data):
     cursor.execute(sql)
     data_base = cursor.fetchall()
 
+    sql_1 = "SELECT * FROM record_info"
+    cursor.execute(sql_1)
+    data_base_1 = cursor.fetchall()
+
     master = [i[2] for i in data_base]
     price = [i[3] for i in data_base]
 
-    info_text = '{} \n {} - {} \n {} - {} \n {} - {} \n {} - {} \n'.format('Выберите услугу: {}'.format(smile_7),
+    info_text = '{} \n {} - {} \n {} - {} \n {} - {} \n {} - {} \n'.format('Выберите услугу: {}'.format(smiles[6]),
                                                                            master[0], price[0], master[1], price[1],
                                                                            master[2], price[2], master[3], price[3])
     row = [InlineKeyboardButton(i, callback_data=str(i)) for i in master[0:2]]
@@ -119,7 +121,7 @@ def choose_master(bot, update, user_data):
     list_1 = [counter]
     reply_markup = InlineKeyboardMarkup(list_1)
 
-    bot.edit_message_text(text='Выберите мастера: {}'.format(smile_6),
+    bot.edit_message_text(text='Выберите мастера: {}'.format(smiles[5]),
                           chat_id=update.callback_query.from_user.id,
                           message_id=query.message.message_id,
                           reply_markup=reply_markup)
@@ -134,12 +136,12 @@ def calendar(bot, update, user_data):
     query = update.callback_query
     name = query.data
     if name == 'Вова':
-        bot.edit_message_text(text='Выберите дату: {}'.format(smile_5),
+        bot.edit_message_text(text='Выберите дату: {}'.format(smiles[4]),
                               chat_id=query.message.chat_id,
                               message_id=query.message.message_id,
                               reply_markup=telegramcalendar.create_calendar_vova())
     else:
-        bot.edit_message_text(text='Выберите дату: {}'.format(smile_5),
+        bot.edit_message_text(text='Выберите дату: {}'.format(smiles[4]),
                               chat_id=query.message.chat_id,
                               message_id=query.message.message_id,
                               reply_markup=telegramcalendar.create_calendar())
@@ -177,7 +179,7 @@ def time_check(bot, update, user_data):
         keyboard.append(row)
 
         reply_markup = InlineKeyboardMarkup(keyboard)
-        bot.edit_message_text(text='Выберите время: {}'.format(smile_8),
+        bot.edit_message_text(text='Выберите время: {}'.format(smiles[6]),
                               chat_id=update.callback_query.from_user.id,
                               message_id=query.message.message_id,
                               reply_markup=reply_markup)
@@ -192,13 +194,13 @@ def contact(bot, update, user_data):
     if query.data == "Нет записи":
         bot.answer_callback_query(callback_query_id=query.id)
     elif query.data == 'Выбрать другой день':
-        bot.edit_message_text(text='Выберите дату: {}'.format(smile_5),
+        bot.edit_message_text(text='Выберите дату: {}'.format(smiles[4]),
                               chat_id=query.message.chat_id,
                               message_id=query.message.message_id,
                               reply_markup=telegramcalendar.create_calendar())
         return THIRD
     else:
-        contact_button = KeyboardButton('Контактные данные {}'.format(smile_11), request_contact=True)
+        contact_button = KeyboardButton('Контактные данные {}'.format(smiles[11]), request_contact=True)
         my_keyboard = ReplyKeyboardMarkup([[contact_button]],
                                           resize_keyboard=True,
                                           one_time_keyboard=True)
@@ -241,7 +243,7 @@ def get_contact(bot, update, user_data, job_queue):
             alarm_info.extend((z[0:4]))
             user_entry.extend((z[2:4]))
 
-    alert = timedelta(hours=3, minutes=13)
+    alert = timedelta(hours=3, minutes=35)
 
     if len(user_entry) == 2:
         date_format = datetime.strptime((' '.join(user_entry[0:2])), "%Y-%m-%d %H:%M")
@@ -288,12 +290,12 @@ def my_entry(bot, update, user_data):
     cursor.execute(sql)
     data_base = cursor.fetchall()
 
-    sql_2 = "SELECT * FROM services"
-    cursor.execute(sql_2)
-    data_base_2 = cursor.fetchall()
+    sql_1 = "SELECT * FROM services"
+    cursor.execute(sql_1)
+    data_base_1 = cursor.fetchall()
 
     if user_data == {}:
-        update.message.reply_text('У вас нет записей {}'.format(smile_10),
+        update.message.reply_text('У вас нет записей {}'.format(smiles[9]),
                                   reply_markup=start_keyboard)
     else:
         global check_price
@@ -302,27 +304,27 @@ def my_entry(bot, update, user_data):
         for z in data_base:
             if user_data.get('number') == z[4]:
                 entries.extend((z[0:4]))
-                for m in data_base_2:
+                for m in data_base_1:
                     if z[0] in m[2]:
                         check_price.append(m[3])
         total_sum = sum(check_price[0:])
         keyboard = []
         if len(entries) == 4:
             row = [InlineKeyboardButton((', '.join(entries[0:4])), callback_data='1')]
-            main_menu = [InlineKeyboardButton('Вернуться в главное меню {}'.format(smile_13), callback_data='0')]
+            main_menu = [InlineKeyboardButton('Вернуться в главное меню {}'.format(smiles[10]), callback_data='0')]
             keyboard.extend((row, main_menu))
         elif len(entries) == 8:
             row = [InlineKeyboardButton((', '.join(entries[0:4])), callback_data='1')]
             row_1 = [InlineKeyboardButton((', '.join(entries[4:8])), callback_data='2')]
-            all_entries = [InlineKeyboardButton('Отменить все записи {}'.format(smile_4), callback_data='Отмена')]
-            main_menu = [InlineKeyboardButton('Вернуться в главное меню {}'.format(smile_13), callback_data='0')]
+            all_entries = [InlineKeyboardButton('Отменить все записи {}'.format(smiles[3]), callback_data='Отмена')]
+            main_menu = [InlineKeyboardButton('Вернуться в главное меню {}'.format(smiles[10]), callback_data='0')]
             keyboard.extend((row, row_1, all_entries, main_menu))
         elif len(entries) > 8:
             row = [InlineKeyboardButton((', '.join(entries[0:4])), callback_data='1')]
             row_1 = [InlineKeyboardButton((', '.join(entries[4:8])), callback_data='2')]
             row_2 = [InlineKeyboardButton((', '.join(entries[8:12])), callback_data='3')]
-            all_entries = [InlineKeyboardButton('Отменить все записи {}'.format(smile_4), callback_data='Отмена')]
-            main_menu = [InlineKeyboardButton('Вернуться в главное меню {}'.format(smile_13), callback_data='0')]
+            all_entries = [InlineKeyboardButton('Отменить все записи {}'.format(smiles[3]), callback_data='Отмена')]
+            main_menu = [InlineKeyboardButton('Вернуться в главное меню {}'.format(smiles[10]), callback_data='0')]
             keyboard.extend((row, row_1, row_2, all_entries, main_menu))
         reply_markup = InlineKeyboardMarkup(keyboard)
         try:
@@ -369,7 +371,7 @@ def cancel_entries(bot, update, user_data, job_queue):
         bot.delete_message(chat_id=update.callback_query.from_user.id,
                            message_id=query.message.message_id)
         bot.send_message(chat_id=update.callback_query.from_user.id,
-                         text='У вас нет записей {}'.format(smile_10),
+                         text='У вас нет записей {}'.format(smiles[9]),
                          reply_markup=start_keyboard)
     elif service == '1':
         info_tuple = tuple(info_list[0:4])
@@ -401,10 +403,10 @@ def cancel_entries(bot, update, user_data, job_queue):
         # del check_price[1]
         conn.commit()
 
-        if len(job_list) == 3 and len(info_list) == 12:
+        if len(info_list) == 12:
             print('убрали второй джоб')
             job_list[1].schedule_removal()
-        elif len(job_list) == 3 and len(info_list) == 8:
+        elif len(info_list) == 8:
             print('убрали третий джоб')
             job_list[2].schedule_removal()
         elif len(job_list) == 2:
@@ -421,8 +423,7 @@ def cancel_entries(bot, update, user_data, job_queue):
                        new_tuple)
         conn.commit()
 
-        if len(job_list) == 3:
-            job_list[2].schedule_removal()
+        job_list[2].schedule_removal()
         bot.send_message(chat_id=update.callback_query.from_user.id,
                          text='Есть!',
                          reply_markup=my_entry(bot, update, user_data))
@@ -435,7 +436,7 @@ def cancel_entries(bot, update, user_data, job_queue):
         bot.delete_message(chat_id=update.callback_query.from_user.id,
                            message_id=query.message.message_id)
         bot.send_message(chat_id=update.callback_query.from_user.id,
-                         text='У вас нет записей {}'.format(smile_10),
+                         text='У вас нет записей {}'.format(smiles[9]),
                          reply_markup=start_keyboard)
     elif service == '0':
         bot.delete_message(chat_id=update.callback_query.from_user.id,
@@ -446,8 +447,6 @@ def cancel_entries(bot, update, user_data, job_queue):
 
 
 def info(bot, update):
-    # bot.send_photo(chat_id=update.message.chat.id,
-    #                photo=open('C:\projects\diplom\photo\mapbrb.jpg', 'rb'))
     update.message.reply_text("Наши контакты: \n "
                               "Адрес: г.Москва \n "
                               "Телефон: +74951234567 \n "
@@ -479,20 +478,12 @@ def main():
         allow_reentry=True
     )
     dp.add_handler(conv_handler)
-
     dp.add_handler(CommandHandler('start', greet_user, pass_user_data=True))
-
     dp.add_handler(CommandHandler("О нас", info))
     dp.add_handler(RegexHandler("О нас", info))
-
     dp.add_handler(CommandHandler('Вернуться в главное меню', greet_user, pass_user_data=True))
     dp.add_handler(RegexHandler('Вернуться в главное меню', greet_user, pass_user_data=True))
-
-    # dp.add_handler(CommandHandler('Отправить напоминание', set_alarm, pass_job_queue=True, pass_user_data=True))
-    # dp.add_handler(RegexHandler('Отправить напоминание', set_alarm, pass_job_queue=True, pass_user_data=True))
-
     dp.add_handler(MessageHandler(Filters.text, talk_to_me))
-
     mybot.start_polling()
     mybot.idle()
 
