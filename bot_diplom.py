@@ -40,7 +40,7 @@ smiles = [emojize(':heavy_plus_sign:', use_aliases=True),
           emojize(':white_check_mark:', use_aliases=True),
           emojize(':no_entry_sign:', use_aliases=True),
           emojize(':leftwards_arrow_with_hook:', use_aliases=True),
-          emojize(':email:', use_aliases=True)]
+          emojize(':telephone_receiver:', use_aliases=True)]
 
 
 start_keyboard = ReplyKeyboardMarkup([['Добавить запись {}'.format(smiles[0])],
@@ -70,9 +70,15 @@ def choose_service(bot, update, user_data):
     cursor.execute(sql)
     data_base = cursor.fetchall()
 
-    sql_1 = "SELECT * FROM record_info"
-    cursor.execute(sql_1)
-    data_base_1 = cursor.fetchall()
+    """ Ограничение количества записей """
+    if user_data == {}:
+        pass
+    else:
+        if len(max_entries) < 3:
+            pass
+        else:
+            return update.message.reply_text('У Вас максимально возможное количество записей!',
+                                             reply_markup=start_keyboard)
 
     master = [i[2] for i in data_base]
     price = [i[3] for i in data_base]
@@ -235,15 +241,22 @@ def get_contact(bot, update, user_data, job_queue):
     cursor.execute(sql)
     data_base = cursor.fetchall()
 
+    """ Словарь для ограничения количества записей """
+    global max_entries
+    max_entries = []
+
+    """ Словарь для напоминаний """
     global alarm_info
     alarm_info = []
+
     user_entry = []
     for z in data_base:
         if user_data.get('number') == z[4]:
             alarm_info.extend((z[0:4]))
             user_entry.extend((z[2:4]))
+            max_entries.append(z[4])
 
-    alert = timedelta(hours=3, minutes=35)
+    alert = timedelta(hours=8, minutes=37)
 
     if len(user_entry) == 2:
         date_format = datetime.strptime((' '.join(user_entry[0:2])), "%Y-%m-%d %H:%M")
@@ -363,8 +376,10 @@ def cancel_entries(bot, update, user_data, job_queue):
         cursor.execute("DELETE FROM record_info WHERE"
                        " service = %s and name = %s and date = %s and time = %s and number = %s",
                        new_tuple)
-        user_data.clear()
         conn.commit()
+
+        user_data.clear()
+        max_entries.clear()
 
         """ Удаление всех напоминаний """
         job_queue.stop()
@@ -381,19 +396,25 @@ def cancel_entries(bot, update, user_data, job_queue):
                        new_tuple)
         conn.commit()
 
-        """ Удаление напоминания """
-        try:
-            if len(info_list) == 12:
-                job_list[0].schedule_removal()
-            elif len(info_list) == 8:
-                job_list[0].schedule_removal()
-            bot.send_message(chat_id=update.callback_query.from_user.id,
-                             text='Есть!',
-                             reply_markup=my_entry(bot, update, user_data))
-        except NameError:
-            bot.send_message(chat_id=update.callback_query.from_user.id,
-                             text='Есть!',
-                             reply_markup=my_entry(bot, update, user_data))
+        max_entries.pop()
+
+        """ Удаление напоминаний """
+        if len(job_list) == 2:
+            print('убрали первый джоб и джоба было 2')
+            job_list[0].schedule_removal()
+        if len(info_list) == 12:
+            print('убрали первый джоб')
+            job_list[0].schedule_removal()
+        if len(info_list) == 8 and len(job_list) == 3:
+            print('убрали второй джоб')
+            job_list[1].schedule_removal()
+        bot.edit_message_reply_markup(chat_id=update.callback_query.message.chat_id,
+                                      message_id=update.callback_query.message.message_id,
+                                      reply_markup=my_entry(bot, update, user_data))
+        # bot.edit_message_text(text=query.message.text,
+        #                       chat_id=query.message.chat_id,
+        #                       message_id=query.message.message_id,
+        #                       reply_markup=my_entry(bot, update, user_data))
     elif service == '2':
         info_tuple = tuple(info_list[4:8])
         new_tuple = info_tuple + (user_data.get('number'),)
@@ -403,15 +424,17 @@ def cancel_entries(bot, update, user_data, job_queue):
         # del check_price[1]
         conn.commit()
 
+        max_entries.pop()
+
+        if len(job_list) == 2:
+            print('убрали второй джоб и джоба было 2')
+            job_list[1].schedule_removal()
         if len(info_list) == 12:
             print('убрали второй джоб')
             job_list[1].schedule_removal()
-        elif len(info_list) == 8:
+        if len(info_list) == 8:
             print('убрали третий джоб')
             job_list[2].schedule_removal()
-        elif len(job_list) == 2:
-            print('убрали второй джоб и джоба было 2')
-            job_list[1].schedule_removal()
         bot.send_message(chat_id=update.callback_query.from_user.id,
                          text='Есть!',
                          reply_markup=my_entry(bot, update, user_data))
@@ -423,14 +446,21 @@ def cancel_entries(bot, update, user_data, job_queue):
                        new_tuple)
         conn.commit()
 
-        job_list[2].schedule_removal()
+        max_entries.pop()
+
+        if len(info_list) == 12:
+            print('убрали третий джоб')
+            job_list[2].schedule_removal()
         bot.send_message(chat_id=update.callback_query.from_user.id,
                          text='Есть!',
                          reply_markup=my_entry(bot, update, user_data))
     elif service == 'Отмена':
         info_tuple = user_data.get('number')
         cursor.execute("DELETE FROM record_info WHERE number = %s" % info_tuple)
+
         user_data.clear()
+        max_entries.clear()
+
         conn.commit()
         job_queue.stop()
         bot.delete_message(chat_id=update.callback_query.from_user.id,
@@ -492,3 +522,5 @@ if __name__ == '__main__':
     main()
 
 """ Cумма не пересчитывается """
+""" Если удалят все записи и создадут новые, что с джобами ? """
+""" Не только шедул ремувал но и чистка списка джоб ? ? """
