@@ -77,7 +77,9 @@ def choose_service(bot, update, user_data):
         if len(max_entries) < 3:
             pass
         else:
-            return update.message.reply_text('У Вас максимально возможное количество записей!',
+            return update.message.reply_text('У Вас максимально возможное количество записей!' + '\n'
+                                             + '\n'
+                                             'Для отмены записи перейдите в "Мои записи"',
                                              reply_markup=start_keyboard)
 
     master = [i[2] for i in data_base]
@@ -256,7 +258,7 @@ def get_contact(bot, update, user_data, job_queue):
             user_entry.extend((z[2:4]))
             max_entries.append(z[4])
 
-    alert = timedelta(hours=8, minutes=37)
+    alert = timedelta(hours=5, minutes=47)
 
     if len(user_entry) == 2:
         date_format = datetime.strptime((' '.join(user_entry[0:2])), "%Y-%m-%d %H:%M")
@@ -349,9 +351,16 @@ def my_entry(bot, update, user_data):
                                       'Чтобы отменить запись -  просто нажмите на нее!',
                                       reply_markup=reply_markup)
         except AttributeError:
-            bot.edit_message_reply_markup(chat_id=update.callback_query.message.chat_id,
-                                          message_id=update.callback_query.message.message_id,
-                                          reply_markup=reply_markup)
+            bot.edit_message_text(text='Клиент: ' + user_data.get('first_name') + '\n'
+                                  + '\n'
+                                  'Итоговая сумма: ' + str(total_sum) + '\n'
+                                  + '\n'
+                                  'Ниже представлена краткая информация о ваших записях.' + '\n'
+                                  'Чтобы отменить запись -  просто нажмите на нее!',
+                                  chat_id=update.callback_query.message.chat_id,
+                                  message_id=update.callback_query.message.message_id,
+                                  reply_markup=reply_markup)
+
         return FIVE
 
 
@@ -411,17 +420,12 @@ def cancel_entries(bot, update, user_data, job_queue):
         bot.edit_message_reply_markup(chat_id=update.callback_query.message.chat_id,
                                       message_id=update.callback_query.message.message_id,
                                       reply_markup=my_entry(bot, update, user_data))
-        # bot.edit_message_text(text=query.message.text,
-        #                       chat_id=query.message.chat_id,
-        #                       message_id=query.message.message_id,
-        #                       reply_markup=my_entry(bot, update, user_data))
     elif service == '2':
         info_tuple = tuple(info_list[4:8])
         new_tuple = info_tuple + (user_data.get('number'),)
         cursor.execute("DELETE FROM record_info WHERE"
                        " service = %s and name = %s and date = %s and time = %s and number = %s",
                        new_tuple)
-        # del check_price[1]
         conn.commit()
 
         max_entries.pop()
@@ -432,12 +436,12 @@ def cancel_entries(bot, update, user_data, job_queue):
         if len(info_list) == 12:
             print('убрали второй джоб')
             job_list[1].schedule_removal()
-        if len(info_list) == 8:
+        if len(info_list) == 8 and len(job_list) == 3:
             print('убрали третий джоб')
             job_list[2].schedule_removal()
-        bot.send_message(chat_id=update.callback_query.from_user.id,
-                         text='Есть!',
-                         reply_markup=my_entry(bot, update, user_data))
+        bot.edit_message_reply_markup(chat_id=update.callback_query.message.chat_id,
+                                      message_id=update.callback_query.message.message_id,
+                                      reply_markup=my_entry(bot, update, user_data))
     elif service == '3':
         info_tuple = tuple(info_list[8:12])
         new_tuple = info_tuple + (user_data.get('number'),)
@@ -521,6 +525,5 @@ def main():
 if __name__ == '__main__':
     main()
 
-""" Cумма не пересчитывается """
 """ Если удалят все записи и создадут новые, что с джобами ? """
 """ Не только шедул ремувал но и чистка списка джоб ? ? """
